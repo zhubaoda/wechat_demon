@@ -1,0 +1,412 @@
+<style lang="less">
+.upload-data{
+  width: 100%;
+  height: 100%;
+  background-color: #f5f5f5;
+}
+.progress-line{
+    padding: 20rpx 200rpx;
+    display: flex;
+    align-items: center;
+    background: #fff;
+    justify-content: space-between;
+    position: relative;
+}
+.progress-line__item{
+  display: flex;
+  font-size: 14px;
+  align-items: center;
+  flex-direction: column;
+  justify-content: space-between;
+  color: #999;
+}
+.progress-line__span{
+  width: 2em;
+  height: 2em;
+  background-color: #ccc;
+  border-radius: 50%;
+  position: relative;
+  color: #fff;
+  text-align: center;
+  line-height: 2em;
+}
+.progress-line__span__line::after{
+  position: absolute;
+  content: '';
+  border-bottom: 1px solid #ccc;
+  width: 240rpx;
+  transform: scaleY(.5);
+  -webkit-transform: scaleY(.5);
+  top: 50%;
+  left: 2em;
+}
+.progress-line__text{
+  margin-top: 6rpx;
+  color: #999;
+}
+.progress-line__item__active .progress-line__span{
+  background-color: #f12c20;
+}
+.progress-line__item__active .progress-line__text{
+ color: #f12c20;
+}
+.upload-data .zan-form__input{
+ flex: 1;
+ position: relative;
+}
+.zan-form__input__placeholder::after{
+  content: attr(data-placeholder);
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  left: 0;
+  top: 0;
+  line-height: 100rpx;
+  color: #ccc;
+  font-size: 14px;
+}
+.picker-wrapper{
+  width: 100%;
+  display: flex;
+  flex: 1;
+}
+.picker-innner{
+  width: 100vw;
+  height: 100%;
+  display: flex;
+  padding: 24rpx 30rpx;
+}
+.zan-form__wrapper{
+  width: 100vw;
+  display: flex;
+  line-height: 100rpx;
+  height: 100rpx;
+  padding: 0 30rpx;
+}
+.zan-form__input{
+  display: flex;
+}
+.next-btns{
+  padding: 20rpx 0 30rpx 0;
+}
+.zan-form__input input{
+  flex: 1;
+  width: 100%;
+  height: 100%;
+}
+.lighten{
+  color: #ccc;
+}
+.upload-img__item{
+  padding: 20rpx 30rpx;
+  background: #fff;
+  margin-top: 20rpx;
+}
+.upload-img__title{
+  font-size: 14px;
+  line-height: 1.5em;
+  padding-bottom: 16rpx;
+  color: #000;
+}
+.upload-img__bd{
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  .remark-textarea{
+    width: 600rpx;
+    min-height: 80rpx;
+  }
+  .upload-img__imgs{
+    position: relative;
+    margin-right: 20rpx;
+    margin-bottom: 20rpx;
+  }
+  .upload-img__add{
+    width: 160rpx;
+    height: 160rpx;
+    border: 1px dashed #ccc;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ccc;
+    font-size: 30px;
+    margin-bottom: 20rpx;
+  }
+  .icon-clear{
+    position: absolute;
+    top: -6px;
+    right: -6px;
+  }
+  image{
+    width: 160rpx;
+    height: 160rpx;
+  }
+}
+.multi-upload__img-contain--loading:before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: hsla(0, 0%, 100%, .2) url(https://b.yzcdn.cn/v2/image/loader@2x.gif) 50% no-repeat;
+  background-size: 16px 16px;
+}
+</style>
+<template>
+  <scroll-view class="upload-data" scroll-y>
+    <view class="progress-line line-bottom">
+      <view class="progress-line__item {{type === 'data' ? 'progress-line__item__active' : ''}}" @tap="toggle('data')">
+        <span class="progress-line__span progress-line__span__line">1</span>
+        <text class="progress-line__text">量体数据</text>
+      </view>
+      <view class="progress-line__item {{type !== 'data' ? 'progress-line__item__active' : ''}}" @tap="toggle('')">
+        <span class="progress-line__span">2</span>
+        <text class="progress-line__text">上传照片</text>
+      </view>
+    </view>
+    <view class="upload-detail">
+      <!-- 量体数据 -->
+      <view wx:if="{{ type === 'data'}}" id="data">
+        <view class="zan-panel" wx:for="{{detail}}" wx:key="index">
+          <view class="zan-cell {{ subitem.options ? 'zan-cell--access' : ''}}" 
+          wx:for="{{item}}"
+          wx:for-item="subitem" wx:for-index="i" wx:key="subitem.id">
+           <block wx:if="{{subitem.options}}">
+             <picker class="picker-wrapper" mode="selector" bindchange="bindPickerChange({{index}}, {{i}})" value="" range="{{subitem.options}}">
+              <view class="picker-innner">
+                  <view class="zan-cell__bd">{{subitem.name}}</view>
+                  <view class="zan-cell__ft {{ subitem.value ===  '' ? 'lighten' : ''}}">{{subitem.value === '' ? '请选择' : subitem.value}}</view>
+              </view>
+            </picker>
+           </block>
+           <block wx:else>
+             <view class="zan-form__wrapper">
+                <block wx:if="{{subitem.number}}"><view class="zan-form__title">{{subitem.number}}.{{subitem.name}}</view></block>
+                <block wx:else><view class="zan-form__title">{{subitem.name}}</view></block>
+                <view class="zan-form__input {{ subitem.value === '' ? 'zan-form__input__placeholder' : '' }}" data-placeholder="{{'请输入' + subitem.name}}">
+                  <input  value="{{subitem.value}}"
+                  @input="bindInput({{index}}, {{i}})"/>
+                </view>
+             </view>
+           </block>
+          </view>
+        </view>
+        <view class="next-btns">
+          <button class="x-btn" @tap="goNext">下一步</button>
+        </view>
+      </view>
+      <!-- 图片上传 -->
+      <view wx:else id="images">
+        <view class="upload-img__item" wx:for="{{photos}}" wx:key="item.name">
+          <view class="upload-img__title">{{ item.name }}</view>
+          <view class="upload-img__bd">
+            <view class="upload-img__imgs {{ img.loading ? 'multi-upload__img-contain--loading' : '' }}" 
+            wx:for="{{item.images}}" wx:for-item="img" wx:for-index="i" wx:key="i">
+              <icon class="icon-clear" type="clear" size="16"
+              @tap.stop="clearImage({{index}}, {{i}})"
+              color="rgba(0, 0, 0, .6)"/>
+              <image src="{{img.src}}" @tap.stop="previewImage({{index}}, {{i}})" mode="aspectFill"/>
+            </view>
+            <view wx:if="{{item.images.length < item.max}}" class="upload-img__add" @tap="chooseImg({{item.max-item.images.length}}, {{index}})">
+              <span>+</span>
+            </view>
+          </view>
+        </view>
+        <view class="upload-img__item">
+          <view class="upload-img__title">其他备注</view>
+          <view class="upload-img__bd">
+            <input class="remark-textarea" placeholder="请输入备注" value="{{remarks}}"
+            @input="bindTextarea"
+            auto-height placeholder-style="color:#ccc;"/>
+          </view>
+        </view>
+        <view class="next-btns">
+          <button class="x-btn" @tap="goConfirm">确定</button>
+        </view>
+      </view>
+    </view>
+  </scroll-view>
+</template>
+
+<script>
+  import wepy from 'wepy'
+  import configData from './data/config'
+  import interfaces from '@/interfaces'
+
+  export default class DataInfo extends wepy.page {
+    config = {
+      navigationBarTitleText: '上传量体数据'
+    }
+    components = {
+    }
+
+    data = {
+      id: 0,
+      order_no: '',
+      type: 'data',
+      detail: configData.detail,
+      remarks: '',
+      photos: [
+        {
+          id: 'measure',
+          name: '量体单验证照片',
+          images: [],
+          max: 2
+        },
+        {
+          id: 'shape',
+          name: '客户体型照片',
+          images: [],
+          max: 5
+        },
+        {
+          id: 'process_sheet',
+          name: '工艺单',
+          images: [],
+          max: 100
+        }
+      ]
+    }
+
+    computed = {
+    }
+
+    getImgArr (index) {
+      return this.photos[index].images.map((item) => {
+        return item.src
+      })
+    }
+
+    methods = {
+      previewImage (index, i) {
+        let previewImgs = this.getImgArr(index)
+        wepy.previewImage({
+          current: previewImgs[i],
+          urls: previewImgs
+        })
+      },
+      clearImage (index, i) {
+        this.photos[index].images.splice(i, 1)
+      },
+      async chooseImg (max, index) {
+        let tempFilePaths = await wepy.chooseImage({
+          count: max,
+        })
+        if (tempFilePaths.tempFilePaths) {
+          tempFilePaths.tempFilePaths.forEach(async (item) => {
+            let key = this.$parent.guid()
+            this.photos[index].images.push({
+              loading: true,
+              src: '',
+              key: key
+            })
+            let uploadRes = await interfaces.uploadImg({'image': item})
+            // console.log(uploadRes, 'uploadRes')
+            uploadRes = JSON.parse(uploadRes)
+
+            // let imgLeng = this.photos[index].images.length
+            // this.photos[index].max = this.photos[index].max-imgLeng
+
+            let current = this.photos[index].images.find((item) => item.key === key)
+            current.src = uploadRes.data
+            current.loading = false
+            this.$apply()
+          })
+        }
+      },
+      async goConfirm () {
+        let isEmpty = false
+        let data = {}
+        this.photos.forEach((item, index) => {
+          if (!item.images.length) {
+            isEmpty = true
+          }
+          data[item.id] = this.getImgArr(index)
+        })
+
+        for (let key in this.detail) {
+          this.detail[key].forEach((item) => {
+            if (item.value === '') {
+              isEmpty = true
+            }
+            data[item.id] = item.value
+          })
+        }
+        if (!this.order_no) {
+          isEmpty = true
+        }
+        data['order_no'] = this.order_no
+        data['remarks'] = this.remarks
+        data['user_id'] = this.id
+       
+        if (isEmpty) {
+          this.$parent.showError('量体数据不完整')
+          return
+        }
+        let res = await interfaces.uploadParams(data)
+        if (!res.hasError) {
+          wepy.showToast({title: '保存成功'})
+          setTimeout(() => {
+              this.$parent.globalData.tabtype = 'all';
+          	  wepy.switchTab({
+                url: '/pages/order/list'
+              })
+          }, 2000)
+        } else if (res.error) {
+          this.$parent.showError(res.error)
+        }
+      },
+      bindTextarea (e) {
+        this.remarks = e.detail.value
+      },
+      bindInput (index, i, e) {
+        let sss = this.checkInputVal(e.detail.value)
+        if (this.checkInputVal(e.detail.value)) {    	   
+          this.detail[index][i].value = e.detail.value
+        }
+        return this.detail[index][i].value
+      },
+      bindPickerChange (index, i, e) {
+        // this.detail[index][i].value = e.detail.value
+        this.detail[index][i].value = this.detail[index][i].options[e.detail.value]
+        //console.log(index, i, e)
+      },
+      goNext () {
+        let isEmpty = false
+        for (let key in this.detail) {
+          this.detail[key].forEach((item) => {
+            if (item.value === '') {
+              isEmpty = true
+            }
+          })
+        }
+        if (isEmpty) {
+          this.$parent.showError('量体数据不完整')
+          return
+        }
+        this.type = ''
+      },
+      toggle (type) {
+        this.type = type
+      }
+    }
+
+    events = {}
+
+    // 验证输入框内容是否合法123
+    checkInputVal (val) {
+      let reg = /^[0-9a-zA-Z_/【】\[\]{}.()（）]{0,30}$/
+      if (!reg.test(val)) {
+        return false
+      }else{
+        return true
+      }
+    }
+
+    onLoad (options) {
+      this.id = options.user_id
+      this.order_no = options.order_no
+    }
+  }
+</script>

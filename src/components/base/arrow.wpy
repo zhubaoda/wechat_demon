@@ -1,0 +1,48 @@
+<style lang="less">
+
+.tbox {
+	width:100%;
+	padding: 10px 15px;
+	background-color: #fff;
+	display: flex;
+	flex-direction: row;
+	justify-content: space-between;
+	align-items: center;
+	font-size: 14px;
+}
+.tbox>image {
+	width: 14px;
+	height: 14px;
+}
+.tbox>.word{
+	color: red;
+}
+</style>
+<template>
+    <view class="tbox" @tap="goOrder">
+    	   <span class="{{show === 1 ? 'word' : ''}}">{{title}}</span>
+    	   <image src="https://zuizan.oss-cn-hangzhou.aliyuncs.com/wechat/poster/201805/kLIiyJQkNgTV2jlKvPE5dpw5UG8sGRcHSyGMl2uL.png"></image>
+    </view>
+</template>
+
+<script>
+  import wepy from 'wepy'
+  export default class My extends wepy.component {
+   props = {
+   	 title: String,
+   	 componentId: {
+   	 	type: Object
+   	 },
+   	 // 字体0为默认颜色，1为黑色
+   	 show: {
+   	 	type: Number,
+   	 	default: 0
+   	 }
+   }
+   methods = {
+   	 goOrder () {
+   	 	this.$emit('jump',this.componentId)
+   	 }
+   }
+  }
+</script>

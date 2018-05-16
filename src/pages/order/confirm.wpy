@@ -1,0 +1,315 @@
+<style lang="less">
+page{background-color: #f5f7f6;}
+.measure-add {
+    width: 100%;
+    .measure-box{
+        width: 94%;
+        margin: 0 auto;
+        label{
+            font-size: 28rpx;
+            display: inline-block;
+            padding: 35rpx 0 20rpx 0;
+        }
+    }
+    .measure-box-content{
+        width: 100%;
+        background: #fff;
+    }
+    .input-item {
+        display: flex;
+        align-items: center;
+        padding: 10rpx;
+        border-bottom: 1rpx dashed #efefef;
+        .title {
+            width: 150rpx;
+            font-size: 30rpx;
+            color: #222
+        }
+        .input-file {
+            padding: 10rpx;
+            font-size: 30rpx;
+            flex: 1;
+        }
+        .address {
+            padding: 20rpx 0;
+            font-size: 32rpx;
+        }
+        .van-icon-arrow {
+            font-size: 28rpx;
+            color: #999;
+        }
+    }
+    .border-hide{border-bottom: none;}
+    .agreements {
+        text-align: center;
+        margin-top: 40rpx;
+        font-size: 24rpx;
+        color: #999;
+        .zan-icon-checked {
+            color: #4b0;
+        }
+        text {
+            color: #1892fb;
+        }
+    }
+
+    .btn-box {
+        margin: 50rpx 30rpx;
+    }
+}
+</style>
+<template>
+    <view class="measure-add">
+        <view class="measure-box">
+            <label>基本信息</label>
+            <view class="measure-box-content">
+                <view class="input-item" @tap="formClick(true, '姓名')">
+                    <input class="input-file" name="name" disabled="true" value="{{detail.name}}" placeholder="输入姓名" />
+                </view>
+                <view class="input-item" @tap="formClick(true, '性别')">
+                    <picker bindchange="bindPickerChange" disabled="true" style="width:100%;" name="sex" value="{{detail.sex}}" range="{{sexOptions}}" range-key="name">
+                        <view class="input-file">{{sexOptions[currentSex].name}}</view>
+                    </picker>
+                    <i class="van-icon van-icon-arrow"></i>
+                </view>
+                <view class="input-item border-hide" @tap="formClick(true, '手机号')">
+                    <input class="input-file" type="number" disabled="true" maxlength="11" value="{{detail.mobile}}" name="mobile" placeholder="输入手机号" />
+                </view>
+            </view>
+        </view>
+
+        <view class="measure-box">
+            <label>量体地址</label>
+            <view class="measure-box-content">
+                <view class="input-item">
+                    <view class="title" wx:if="{{province.name === undefined}}">省市区</view>
+                    <input class="input-file" disabled @tap="openAddressPicker" value="{{province ? province.name : '省'}} - {{city ? city.name : '市' }} - {{area ? area.name : '区' }}" readonly placeholder="选择地址" />
+                    <i class="van-icon van-icon-arrow"></i>
+                </view>
+
+                <view class="input-item border-hide">
+                    <input class="input-file" @input="bindInput('address_detail')" name="address_detail" value="{{detail.address_detail}}" placeholder="请输入详细地址" />
+                </view>
+            </view>
+        </view>
+
+        <view class="measure-box">
+            <label>量体时间</label>
+            <view class="measure-box-content">
+                <view class="input-item border-hide">
+                    <input class="input-file" disabled name="measured_at" value="{{detail.measured_at}}" readonly @tap="selectTimePicker" placeholder="选择时间" />
+                    <i class="van-icon van-icon-arrow"></i>
+                </view>
+            </view>
+        </view>
+
+        <view class="measure-box">
+            <label>备注</label>
+            <view class="measure-box-content">
+                <view class="input-item border-hide" @tap="formClick(true, '备注')">
+                    <input class="input-file" name="remarks" disabled="true" value="{{detail.remarks}}" placeholder="输入备注" />
+                </view>
+            </view>
+        </view>
+
+        <view class="btn-confirm-fixed" style="margin-top: 30rpx;">
+            <button class="x-btn" @tap="submitForm">确定</button>
+        </view>
+        <areaPicker />
+        <datePicker />
+        <Toast />
+    </view>
+</template>
+<script>
+import wepy from 'wepy'
+import interfaces from '@/interfaces/index'
+import AuthMixin from '@/mixins/auth'
+import datePicker from '@/components/wepy-date-picker'
+import areaPicker from '@/components/wepy-area-picker'
+import Toast from '@/components/base/toast'
+
+export default class Confirm extends wepy.page {
+    config = {
+        navigationBarTitleText: '修改信息'
+    }
+    mixins = [AuthMixin]
+    data = {
+        detail: {
+            name: '',
+            mobile: '',
+            address: '',
+            address_detail: '',
+            measured_at: '',
+            remarks: ''
+        },
+        sexOptions: [
+            {
+                id: 1,
+                name: '男'
+            },
+            {
+                id: 2,
+                name: '女'
+            }
+        ],
+        currentSex: 0,
+        province: {},
+        city: {},
+        area: {},
+        provinceCode: '',
+        cityCode: '',
+        areaCode: '',
+        showTime: '',
+        startTime: '',
+        endTime: '',
+        currentDetail: null,
+        is_argreement: true,
+        region: [],  // 备用地址
+        region01: [],
+        currentDay: '',
+        currentTime: '',
+        addressDetail: ''
+    }
+    components = {
+        datePicker: datePicker,
+        areaPicker,
+        Toast
+    }
+    computed = {
+    }
+    events = {
+        // changeTime (val) {
+        //     // let timeItem = this.detail.find((item) => {
+        //     //     return item.id === 'measured_at'
+        //     // })
+        //     timeItem.value = this.measured_at
+        // },
+        changeTime(showTime, startTime, endTime) {
+            this.showTime = showTime;
+            this.startTime = startTime;
+            this.endTime = endTime;
+            this.detail.measured_at = this.showTime
+            console.log(this.showTime, this.startTime)
+
+        },
+        areaArray(province, city, area) {
+            this.province = province;
+            this.city = city;
+            this.area = area;
+
+            this.provinceCode = province.code;
+            this.cityCode = city.code;
+            this.areaCode = area.code;
+            console.log(this.provinceCode);
+            this.$apply();
+        },
+    }
+    methods = {
+        openAddressPicker () {
+            this.$invoke('areaPicker', 'openAddressPicker')
+        },
+        formClick (disable, name) {
+            if (disable) {
+                this.$invoke('Toast', 'showZanToast', {title: name + '不能修改'})
+            }
+        },
+        bindInput (index, e) {
+            this.detail[index] = e.detail.value
+        },
+        async submitForm() {
+            let timeRange = await this.getTimeRange()
+            let resData = {
+                id: this.currentDetail.measure_id,
+                receiver_province: this.province.name,
+                receiver_city: this.city.name,
+                receiver_district: this.area.name,
+                receiver_address: this.detail.address_detail,
+                measured_at_begin: timeRange[0],
+                measured_at_end: timeRange[1]
+            }
+            let res = await interfaces.modifyOrderInfo(resData)
+            if (!res.hasError) {
+                wepy.showToast({title: '修改成功'})
+                setTimeout(() => {
+                    wepy.navigateBack({
+                        delta: 1
+                    })
+                }, 2000)
+            } else if (res.error) {
+                this.$parent.showError(res.error)
+            }
+        },
+        selectTimePicker() {
+            this.$invoke("datePicker", 'show')
+        },
+        switchAgreement() {
+            this.is_argreement = !this.is_argreement
+        },
+        goToAgreement() {
+            wepy.navigateTo({
+                url: '/pages/agreement'
+            })
+        }
+    }
+
+    async getTimeRange () {
+        // let timeRange = this.detail.find((item) => {
+        //     if (item.id === 'address_detail') {
+        //         this.addressDetail = item.value
+        //     }
+        //     return item.id === 'measured_at'
+        // }).value
+
+        let timeRange = this.detail.measured_at.trim()
+        let result 
+        let start
+        let end
+        await new Promise((resolve, reject) => {
+            result = timeRange.match(/(\d+)月(\d+)日\s+(\d+:\d+)-(\d+:\d+)/)
+            resolve()
+        })
+        let m = +result[1] < 10 ? '0' + result[1] : result[1]
+        let d = +result[2] < 10 ? '0' + result[2] : result[2]
+        let year = new Date().getFullYear()
+        let baseTime = `${year}-${m}-${d}`
+        start = `${baseTime} ${result[3]}`
+        end = `${baseTime} ${result[4]}`
+        return [start, end]
+    }
+
+
+    bindPickerChange(e) {
+        this.currentSex = e.detail.value;
+        this.$apply();
+
+    }
+
+    onLoad () {
+        this.currentDetail = this.$parent.globalData.editOrder
+        console.log(13,this.currentDetail )
+        this.initData()
+    }
+
+    initData () {
+        this.detail.name = this.currentDetail.name || ''
+        this.currentSex = this.currentDetail.sex-1
+        this.detail.mobile = this.currentDetail.mobile || ''
+        this.detail.address = `${this.currentDetail.receiver_province} ${this.currentDetail.receiver_city} ${this.currentDetail.receiver_district}` || ''
+        this.detail.address_detail = this.currentDetail.receiver_address || ''
+        this.detail.measured_at = this.$parent.initMeasured(this.currentDetail.measured_at) || ''
+        this.detail.remarks = this.currentDetail.remarks || ''
+
+        // 初始化地址选择
+        this.province.name = this.currentDetail.receiver_province
+        this.city.name = this.currentDetail.receiver_city
+        this.area.name = this.currentDetail.receiver_district
+
+        // 初始化时间选择
+        this.currentDay = this.currentDetail.measured_at.match(/(\d+月\d+日)/)[1]
+        this.currentTime = this.currentDetail.measured_at.match(/(\d+:\d+-\d+:\d+)/)[1]
+        console.log(1221, this.currentDay, this.currentTime)
+        this.$invoke('datePicker', 'selectDay', this.currentDay)
+        this.$invoke('datePicker', 'selectTime', this.currentTime)
+    }
+}
+</script>

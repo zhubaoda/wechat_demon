@@ -1,0 +1,79 @@
+<template name="banner">
+  <view class="banner">
+    <view class="banner__filter-blur" style="background-image: url({{ logo }})"></view>
+    <view class="banner__mask"></view>
+    <image class="banner__logo" src="{{logo}}"></image>
+  </view>
+</template>
+<script>
+  import wepy from 'wepy'
+  export default class Banner extends wepy.component {
+    props = {
+      isUserCenter: Boolean,
+      logo: String
+    }
+  }
+</script>
+<style>
+.banner {
+    position: relative;
+    width: 750rpx;
+    height: 288rpx;
+    color: #fff;
+    overflow: hidden
+}
+
+.banner__filter-blur {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    background-repeat: no-repeat;
+    background-position: 375rpx;
+    background-size: 375rpx auto;
+    -webkit-filter: blur(12px);
+    filter: blur(12px);
+    -webkit-transform: scale(1.1);
+    transform: scale(1.1);
+    -webkit-transform-origin: center center;
+    transform-origin: center center
+}
+
+.banner__mask {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    opacity: .8;
+    background: -webkit-linear-gradient(left bottom, #353b44, #353b44 20%, #777e89);
+    background: linear-gradient(to right top, #353b44, #353b44 20%, #777e89)
+}
+
+.banner__logo {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 161rpx;
+    height: 161rpx;
+    -webkit-transform: translate3d(-50%, -50%, 0);
+    transform: translate3d(-50%, -50%, 0);
+    border-radius: 50%;
+    background-clip: padding-box;
+    border: 3px solid hsla(0, 0%, 100%, .2);
+    background-color: #fff
+}
+
+.banner__title {
+    text-align: center;
+    font-size: 14px;
+    padding: 29rpx
+}
+
+.banner--usercenter {
+    background: #fff;
+    color: #333;
+    border-bottom: 1rpx solid #e5e5e5
+}
+</style>

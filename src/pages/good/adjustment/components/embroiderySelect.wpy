@@ -1,0 +1,179 @@
+<template>
+    <block wx:if="{{type === 'position'}}">
+        <view class="select-position-block">
+            <view class="horizontal-wrapper" wx:for="{{embroidery}}" wx:key="item" @tap="selectPositionChange({{index}},{{item}})">
+                <view class="list-content">
+                    <image src="{{item.image}}" class="image" />
+                    <view class="label-checked" style="{{item.is_default ? 'display: block;' : ''}}">
+                        <view class="van-icon van-icon-success"></view>
+                    </view>
+                </view>
+                <view class="w-name">{{item.name}}</view>
+            </view>
+        </view>
+    </block>
+    <block wx:if="{{type === 'color'}}">
+        <view class="select-color-block">
+            <view class="horizontal-wrapper" wx:for="{{embroidery}}" wx:key="item" @tap="selectColorChange({{index}},{{item}})">
+                <view class="color-list" style="{{item.color_value ? 'background:' + item.color_value + ';' : 'background: #ccc;'}}">
+                    <view class="label-color-checked" style="{{item.is_default ? 'display: block;' : ''}}">
+                        <view class="van-icon van-icon-success"></view>
+                    </view>
+                </view>
+                <view class="w-name">{{item.name}}</view>
+            </view>
+        </view>
+    </block>
+    <block wx:if="{{type === 'font'}}">
+        <view class="select-position-block">
+            <view class="horizontal-wrapper" wx:for="{{embroidery}}" wx:key="item" @tap="selectFrontChange({{index}},{{item}})">
+                <view class="list-content font-content">
+                    <image src="{{item.font_image}}" class="image"  mode="aspectFit"/>
+                    <view class="label-checked" style="{{item.is_default ? 'display: block;' : ''}}">
+                        <view class="van-icon van-icon-success"></view>
+                    </view>
+                </view>
+                <view class="w-name">{{item.name}}</view>
+            </view>
+        </view>
+    </block>
+    <block wx:if="{{type === ''}}">
+        <view class="select-position-block">
+            <view class="horizontal-wrapper" wx:for="{{embroidery}}" wx:key="item" @tap="selectTechChange({{index}},{{item}})">
+                <view class="list-content">
+                    <image src="{{item.image}}" class="image" mode="aspectFit"/>
+                    <view class="badge-count" wx:if="{{item.price}}">+￥{{item.price}}</view>
+                    <view class="label-checked" style="{{item.is_default ? 'display: block;' : ''}}">
+                        <view class="van-icon van-icon-success"></view>
+                    </view>
+                </view>
+                <view class="w-name">{{item.name}}</view>
+            </view>
+        </view>
+    </block>
+</template>
+<script>
+import wepy from 'wepy'
+
+export default class embroiderySelect extends wepy.component {
+    props = {
+        type: {
+            default: ''
+        },
+        embroidery: {
+            default: Object
+        },
+        position: String
+    }
+    data = {
+    }
+    methods = {
+        selectTechChange(index, item) {
+            this.$emit('selectTechChange', this.position, item.id)
+        },
+        selectPositionChange(style, item) {
+            this.$emit('selectChange', this.position, style, item)
+        },
+        selectColorChange(style, item) {
+            this.$emit('selectChange', this.position, style, item)
+        },
+        selectFrontChange(style, item) {
+            this.$emit('selectChange', this.position, style, item)
+        }
+    }
+}
+</script>
+<style lang="less">
+.w-name {
+    font-size: 14px;
+    padding: 30rpx 0;
+    text-align: center;
+}
+.select-position-block {
+    display: flex;
+    flex-wrap: wrap;
+    .horizontal-wrapper {
+        position: relative;
+        width: 33.333%;
+        .list-content {
+            position: relative;
+            overflow: hidden;
+            height: 230rpx;
+            width: 230rpx;
+            background: #B7B7B7;
+            border-radius: 10rpx;
+            .image {
+                width: 230rpx;
+                height: 230rpx;
+            }
+            &.font-content {
+                height: 140rpx;
+                .image {
+                    height: 140rpx;
+                }
+            }
+        }
+        .badge-count {
+            font-size: 20rpx;
+            color: #fff;
+            background: #F12C20;
+            border-radius: 100px;
+            padding: 2rpx 10rpx;
+            position: absolute;
+            bottom: 10rpx;
+            right: 10rpx;
+        }
+    }
+}
+
+.select-color-block {
+    display: flex;
+    flex-wrap: wrap;
+    .horizontal-wrapper {
+        width: 20%;
+    }
+    .color-list {
+        position: relative;
+        width: 100rpx;
+        height: 100rpx;
+        margin: .2rem auto;
+        border-radius: 200px;
+        box-sizing: border-box;
+    }
+}
+
+.label-checked {
+    position: absolute;
+    top: -50rpx;
+    left: -50rpx;
+    background: #cb3233;
+    width: 100rpx;
+    height: 100rpx;
+    transform: rotate(45deg);
+    display: none;
+    .van-icon-success {
+        position: absolute;
+        bottom: 38rpx;
+        font-size: 26rpx;
+        transform: rotate(-45deg);
+        color: #fff;
+        right: 6rpx;
+    }
+}
+
+.label-color-checked {
+    position: absolute;
+    right: 0rpx;
+    width: 30rpx;
+    height: 30rpx;
+    line-height: 30rpx;
+    text-align: center;
+    background: #cb3233;
+    border-radius: 100px;
+    display: none;
+    .van-icon-success {
+        font-size: 24rpx;
+        color: #fff;
+    }
+}
+</style>

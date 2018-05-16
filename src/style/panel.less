@@ -1,0 +1,38 @@
+.zan-panel {
+  width: 750rpx;
+  background: #fff;
+  margin-top: 10px;
+  overflow: hidden;
+  position: relative;
+}
+.zan-panel::after{
+  content: '';
+  position: absolute;
+  border-bottom: 1rpx solid #e5e5e5;
+  transform: scaleY(.5);
+  -webkit-transform: scaleY(.5);
+  width: 100%;
+  left: 0;
+  bottom: 0;
+}
+.zan-panel::before{
+  content: '';
+  position: absolute;
+  border-bottom: 1rpx solid #e5e5e5;
+  transform: scaleY(.5);
+  -webkit-transform: scaleY(.5);
+  width: 100%;
+  left: 0;
+  top: 0;
+}
+.zan-panel-title {
+  font-size: 14px;
+  line-height: 1;
+  color: #999;
+  padding: 20px 15px 0 15px;
+}
+
+
+.zan-panel--without-margin-top {
+  margin-top: 0;
+}

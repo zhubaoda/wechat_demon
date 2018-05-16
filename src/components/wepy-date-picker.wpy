@@ -1,0 +1,246 @@
+<template>
+    <view class="zan-popup  {{ showPopup ? 'zan-popup--show' : ''}} zan-popup--bottom">
+        <!-- 遮罩层，有需要可以在遮罩层上增加点击事件 -->
+        <view class="zan-popup__mask" @tap.stop="hide"></view>
+        <!-- 弹出层的内容放在此元素内 -->
+        <view class="zan-popup__container popup-width">
+            <view class="date-title">选择日期</view>
+            <view class="flex">
+                <view class="data-width-container" wx:for="{{sevenArray}}" wx:key="item">
+                    <view class="date-cell" @tap.stop="selectDay({{item.cnday}})">
+                        <view>{{item.week}}</view>
+                        <view>{{item.cnday}}</view>
+                        <view class="data-label-checked" wx:if="{{item.selected}}">
+                            <view class="van-icon van-icon-success"></view>
+                        </view>
+                    </view>
+                </view>
+            </view>
+            <view class="date-title date-mt-10">选择时间段</view>
+            <view class="flex">
+                <view class="time-width-container" wx:for="{{timeArray}}" wx:key="item">
+                    <view class="time-cell" @tap.stop="selectTime({{item.value}})">
+                        <view>{{item.value}}</view>
+                        <view class="data-label-checked" wx:if="{{item.selected}}">
+                            <view class="van-icon van-icon-success"></view>
+                        </view>
+                    </view>
+                </view>
+            </view>
+            <view class="date-btn-box">
+                <button class="zan-btn zan-btn--primary" @tap.stop="comfire">确认</button>
+            </view>
+        </view>
+    </view>
+</template>
+<script>
+import wepy from 'wepy'
+export default class datePicker extends wepy.component {
+    props = {
+        show: {
+            type: Boolean,
+            value: false,
+        }
+    }
+    data = {
+        showPopup: false,
+        sevenArray: [],
+        timeArray: [
+            { selected: false, value: "09:00-12:00" },
+            { selected: false, value: "13:00-16:00" },
+            { selected: false, value: "16:00-19:00" },
+            { selected: false, value: "20:00-21:00" }
+        ]
+    }
+    onLoad() {
+        this.combine();
+    }
+    methods = {
+        selectDay (cnday) {
+            console.log(cnday, 'selected cnday')
+            this.sevenArray.map((item) => {
+                if (item.cnday === cnday) {
+                    item.selected = true
+                } else {
+                    item.selected = false;
+                }
+            })
+        },
+        selectTime (value) {
+            console.log(value, 'selected value')
+            this.timeArray.map((item) => {
+                if (item.value === value) {
+                    item.selected = true
+                } else {
+                    item.selected = false;
+                }
+            })
+        },
+        comfire() {
+            let data = this.sevenArray.filter((item, key) => {
+                return item.selected == true
+            });
+            let time = this.timeArray.filter((item, key) => {
+                return item.selected == true
+            });
+            this.showPopup = false;
+            let dataTime = data[0].data;
+            let key = time[0].value.split('-');
+            let startTime = `${dataTime} ${key[0]}`;
+            let endTime = `${dataTime} ${key[1]}`
+            this.$emit("changeTime", `${data[0].cnday}  ${time[0].value}`, startTime, endTime);
+        },
+        show() {
+            this.showPopup = true;
+        },
+        hide() {
+            this.showPopup = false;
+        },
+    }
+
+    combine() {
+        let array = [];
+        for (let i = 1; i < 8; i++) {
+            let getday = this.getDay(i);
+            let getweek = i == 1 ? '明天' : this.getWeek(getday);
+            let getcnday = this.getcnDay(i);
+            let is_select = false
+            array.push({
+                data: getday,
+                cnday: getcnday,
+                week: getweek,
+                selected: is_select,
+            })
+        }
+        this.sevenArray = array;
+        this.$apply();
+    }
+    getDay(day) {
+        let today = new Date();
+        let targetday_milliseconds = today.getTime() + 1000 * 60 * 60 * 24 * day;
+        today.setTime(targetday_milliseconds); //注意，这行是关键代码  
+        let tYear = today.getFullYear();
+        let tMonth = today.getMonth();
+        let tDate = today.getDate();
+        tMonth = this.doHandleMonth(tMonth + 1);
+        tDate = this.doHandleMonth(tDate);
+        return tYear + "-" + tMonth + "-" + tDate;
+    }
+    getcnDay(day) {
+        let today = new Date();
+
+        let targetday_milliseconds = today.getTime() + 1000 * 60 * 60 * 24 * day;
+
+        today.setTime(targetday_milliseconds); //注意，这行是关键代码  
+
+        let tYear = today.getFullYear();
+        let tMonth = today.getMonth() + 1;
+        let tDate = today.getDate();
+        return tMonth + "月" + tDate + "日";
+    }
+    doHandleMonth(month) {
+        let m = month;
+        if (month.toString().length == 1) {
+            m = "0" + month;
+        }
+        return m;
+    }
+    getWeek(dateString) {
+        let date;
+        if (this.isNull(dateString)) {
+            date = new Date();
+        } else {
+            let dateArray = dateString.split("-");
+            date = new Date(dateArray[0], parseInt(dateArray[1] - 1), dateArray[2]);
+        }
+        return "周" + "日一二三四五六".charAt(date.getDay());
+    }
+    isNull(object) {
+        if (object == null || typeof object == "undefined") {
+            return true;
+        }
+        return false;
+    }
+}
+</script>
+<style lang="less">
+.container {
+    padding: 0px;
+    height: 100%;
+}
+
+.flex {
+    display: -webkit-flex;
+    display: flex;
+    -webkit-flex-wrap: wrap;
+    flex-wrap: wrap;
+    width: 750rpx;
+    padding: 10rpx 10rpx
+}
+
+.date-title {
+    padding: 20rpx 0 0 10rpx;
+    font-size: 28rpx;
+    color: #999;
+}
+
+.date-mt-10 {
+    margin-top: 10rpx
+}
+
+.data-width-container {
+    width: 25%;
+    text-align: center;
+    padding-top: 20rpx;
+    .date-cell {
+        position: relative;
+        overflow: hidden;
+        font-size: 26rpx;
+        color: #222;
+        border: 1px solid #efefef;
+        border-radius: 10rpx;
+        width: 150rpx;
+        padding: 5rpx;
+    }
+}
+
+.time-width-container {
+    width: 50%;
+    text-align: center;
+    padding-top: 20rpx;
+    .time-cell {
+        position: relative;
+        overflow: hidden;
+        font-size: 26rpx;
+        color: #222;
+        border: 1px solid #efefef;
+        border-radius: 10rpx;
+        width: 260rpx;
+        padding: 10rpx;
+        margin: 0 auto;
+    }
+}
+
+.data-label-checked {
+    position: absolute;
+    top: -31rpx;
+    left: -30rpx;
+    background: #cb3233;
+    width: 60rpx;
+    height: 60rpx;
+    transform: rotate(45deg);
+    .van-icon-success {
+        position: absolute;
+        bottom: 18rpx;
+        font-size: 22rpx;
+        transform: rotate(-46deg);
+        color: #fff;
+        right: 0rpx;
+    }
+}
+
+.date-btn-box {
+    width: 670rpx;
+    margin: 40rpx;
+}
+</style>

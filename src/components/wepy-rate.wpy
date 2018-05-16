@@ -1,0 +1,69 @@
+<template>
+    <block wx:for="{{stars}}" wx:key="item.id">
+        <image wx:if="{{readonly}}" class="star-image-read" data-key="{{item}}" @tap="selected" style="left: {{item}}rpx" src="{{key > item ?selectedSrc : normalSrc}}">
+        </image>
+        <image wx:else class="star-image" data-key="{{item+1}}" @tap="selected" style="left: {{item*10}}rpx" src="{{key > item ?selectedSrc: normalSrc}}">
+        </image>
+    </block>
+</template>
+<script>
+import wepy from 'wepy';
+export default class Rate extends wepy.component {
+    props = {
+        readonly: {
+            default: false
+        },
+        key: {
+            default: 1
+        },
+    }
+    data = {
+        // 1、最低1星，最高5星
+        // 2、当点亮后，会触发对应的文字，1星=非常差、2星=差、3星=一般，4星=满意、5星=非常满意
+
+
+        stars: [0,1,2,3,4],
+        normalSrc: '../../icons/normal.png',
+        selectedSrc: '../../icons/selected.png',
+        halfSrc: '../../icons/half.png',
+    }
+
+    events = {
+
+    }
+    methods = {
+        selected: function(e) {
+            var key = e.currentTarget.dataset.key;
+            this.key = key;
+            this.$emit("change", this.key)
+        }
+    }
+
+    onLoad() {
+
+    }
+}
+</script>
+<style lang="less">
+.star-image {
+    position: relative;
+    width: 50rpx;
+    height: 50rpx;
+    src: "../icons/normal.png";
+    .item {
+        position: absolute;
+        width: 25rpx;
+        top: 0;
+        height: 50rpx;
+    }
+}
+
+
+
+.star-image-read {
+    position: relative;
+    width: 30rpx;
+    height: 30rpx;
+    src: "../icons/normal.png";
+}
+</style>

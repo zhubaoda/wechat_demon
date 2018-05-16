@@ -1,0 +1,377 @@
+<template>
+    <view class="container--without-border adjustment-wrapper">
+        <view class="zan-top-block">
+            <view class="img" wx:if="{{product.image_list.length>0}}">
+                <image src="{{product.image_list[0]}}" class="good-image" />
+            </view>
+            <view class="good-info">
+                <view class="name zan-ellipsis--l2">{{product.name}}</view>
+                <view class="price">￥{{sale_price}}</view>
+            </view>
+        </view>
+        <view class="space"></view>
+        <view class="content-block">
+            <view class="title-wrapper">
+                <view class="title-name">可调节细节</view>
+                <view class="line"></view>
+            </view>
+            <view class="adjust-wrapper">
+                <view class="item-list-block item-list-block__first">
+                    <view class="name">面料</view>
+                    <!--面料模块-->
+                    <adjust-item-fabric :fabric.sync="fabric_data"
+                    @fabricItemClick.user="changeFabric"></adjust-item-fabric>
+                </view>
+                <view class="item-list-block">
+                    <view class="name">设计刺绣</view>
+                    <!--刺绣模块-->
+                    <adjust-item-embroidery type="embroidery"
+                    @fabricItemClick.user="changeEembroidery"
+                    :embroidery.sync="embroid_data"></adjust-item-embroidery>
+                </view>
+                <repeat for="{{tech_details}}" key="index" item="item" index="position">
+                    <view class="grid-list-block" wx:if="{{item.detail}}">
+                        <view class="name tech-price-name">
+                            <text>{{item.name}}</text>
+                            <text wx:if="{{item.selected_price}}" class="tech-price">+￥{{item.selected_price}}</text>
+                        </view>
+                        <!--胸袋选择列表-->
+                        <embroidery-select :position.sync="position" :embroidery.sync="item.detail"></embroidery-select>
+                    </view>
+                </repeat>
+            </view>
+        </view>
+        <view class="btn-footer">
+        	    <!-- <view class="total_price">
+        	    	  <view>合计：<span>￥{{total}}</span></view>
+        	    </view> -->
+            <button class="zan-btn zan-btn--large zan-btn--danger total_price_two" 
+            	@tap.stop="toBeMaking">确定
+            </button>
+        </view>
+    </view>
+</template>
+<script>
+import wepy from 'wepy'
+import interfaces from '@/interfaces/index'
+import AuthMixin from '@/mixins/auth';
+import fabricItem from './components/fabricItem'
+import embroiderySelect from './components/embroiderySelect'
+import _ from 'underscore'
+export default class AdjustmentIndex extends wepy.page {
+    config = {
+        navigationBarTitleText: '细节调整'
+    }
+    components = {
+        'adjust-item-fabric': fabricItem,
+        'adjust-item-embroidery': fabricItem,
+        'embroidery-select': embroiderySelect
+    }
+    mixins = [AuthMixin]
+    data = {
+        id: '',
+        embroid_data: {}, //刺绣信息
+        fabric_data: {},
+        product: {},
+        tech_details: [],
+        current: 0,
+        value1: 1,
+        value2: 2,
+        hasParamsList: false,
+        orderId: null
+    }
+
+    computed = {
+        sale_price () {
+            return parseFloat(this.product.sale_price).toFixed(2)
+        },
+        total () {
+            let price = 0
+            this.tech_details.map((item) => {
+                price = parseFloat(item.selected_price) + price
+            })
+            price = +this.sale_price + price
+            return parseFloat(price).toFixed(2)
+        }
+    }
+
+    events = {
+        //选择工艺细节
+        selectTechChange (position, style) {
+            let tech_details = this.tech_details
+            let target = tech_details[position]
+            let id = target.id
+            let arr = target.detail
+           
+            arr.map((item) => {
+                if (item.id === style) {
+                    item.is_default = true
+                    target.selected_price = item.price
+                } else {
+                    item.is_default = false
+                }
+            })
+            if(!this.$parent.globalData.tech[this.orderId]){
+            	  this.$parent.globalData.tech[this.orderId] = {}
+            }
+           this.$parent.globalData.tech[this.orderId][this.id] = Object.assign({}, this.$parent.globalData.tech[this.orderId][this.id], {
+                 [id]: style
+           })
+           this.$apply()
+        }
+    }
+
+    methods = {
+        changeFabric() {
+            return
+            wepy.navigateTo({
+                url: '/pages/good/adjustment/detail?type=1'
+            })
+        },
+        changeEembroidery() {
+            wepy.navigateTo({
+                url: '/pages/good/adjustment/detail?type=2&id=' + this.id + '&orderId=' + this.orderId
+            })
+        },
+        async toBeMaking() {
+            if (_.isEmpty(this.fabric_data)) {
+                await this.$parent.showError('请选择面料')
+                return
+            }
+            if (!this.$parent.globalData.tech[this.orderId] && !this.$parent.globalData.tech[this.orderId][this.id]) {
+            	   await this.$parent.showError('请选择完整工艺细节')
+               return
+            }
+            for (let key in this.tech_details) {  
+                if (!this.$parent.globalData.tech[this.orderId][this.id][this.tech_details[key].id]) {
+                    await this.$parent.showError('请选择完整工艺细节')
+                    return
+                }
+            }
+            wepy.navigateBack()
+        }
+    }
+
+    async onShow() {        
+        // 默认选择第一个面料
+        let goodsInfo = this.$parent.getSettleGoods(this.orderId, this.id)
+        if (goodsInfo) {
+          this.fabric_data = goodsInfo.fabric_data[0];
+          this.embroid_data = this.$parent.getEmbroidData(this.orderId, this.id);
+          this.$apply()
+        }
+    }
+    async onLoad (option) {
+        this.id = option.goodId || option.id;
+        this.orderId = option.orderId || ''
+        let goodsInfo = this.$parent.getSettleGoods(this.orderId, this.id)
+        if (!goodsInfo) {
+            goodsInfo = await this.getGoodsDetail(this.id);
+        }
+        let product = goodsInfo.product
+        let tech_details = goodsInfo.tech_details
+        let fabric_data = goodsInfo.fabric_data
+        let embroid_data = goodsInfo.embroid_data
+        this.$parent.setSettleGoods({ product, tech_details, fabric_data, embroid_data },this.orderId,this.id)
+        this.product = product;
+        this.tech_details = tech_details;
+        this.fabric_data = fabric_data[0];
+        this.embroid_data = embroid_data;
+        this.$apply()
+    }
+
+    async getGoodsDetail(id) {
+        let res = await interfaces.getGoods(id)
+        let data = res.data;
+        return data
+    }
+}
+</script>
+<style lang="less">
+.zan-top-block {
+    display: flex;
+    padding: 20rpx;
+    .good-image {
+        width: 186rpx;
+        height: 186rpx;
+        display: block;
+    }
+    .good-info {
+        padding-left: 20rpx;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        .name {
+            font-size: 28rpx;
+            color: #3a3a3a;
+        }
+        .price {
+            color: #cb3233;
+            font-size: 38rpx;
+            text-align: right;
+        }
+    }
+}
+.tech-price-name {
+    display: flex;
+    justify-content: space-between;
+    .tech-price{
+        color: #cb3233;
+        font-size:30rpx;
+        text-align:right;
+        padding-right:10rpx;
+    }
+}
+
+.content-block {
+    padding-bottom: 50px;
+    .title-wrapper {
+        padding: 34rpx 0;
+        border-bottom: 1rpx solid #efefef;
+        position: relative;
+        .title-name {
+            position: relative;
+            font-size: 32rpx;
+            color: #8f8f8f;;
+            margin: 0 auto;
+            text-align: center;
+            width: 200rpx;
+            background: #fff;
+            z-index: 9;
+        }
+        .line {
+            display: block;
+            height: 1rpx;
+            background: #8f8f8f;
+            position: absolute;
+            width: 50%;
+            left: 0;
+            right: 0;
+            margin: 0 auto;
+            top: 50%;
+        }
+    }
+    .adjust-wrapper {
+        padding: 34rpx 20rpx;
+        .item-list-block {
+            margin-top: 30rpx;
+            .name {
+                font-size: 30rpx;
+                color: #8f8f8f;
+                padding: 20rpx 0;
+            }
+            .footer {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 34rpx;
+                padding-top: 30rpx;
+                .icon {
+                    width: 44rpx;
+                    height: 44rpx;
+                }
+                .name {
+                    color: #000;
+                    padding-left: 16rpx;
+                }
+            }
+        }
+        .item-list-block__first{
+            margin-top: 0;
+        }
+        .grid-list-block {
+            margin-top: 30rpx;
+            .name {
+                font-size: 30rpx;
+                color: #8f8f8f;
+                padding: 20rpx 0;
+            }
+            .select-list-block {
+                display: flex;
+                flex-wrap: wrap;
+                .horizontal-wrapper {
+                    position: relative;
+                    width: 33.333%;
+                    .list-content {
+                        position: relative;
+                        overflow: hidden;
+                        height: 230rpx;
+                        width: 230rpx;
+                        background: #B7B7B7;
+                        border-radius: 10rpx;
+                        .image {
+                            width: 230rpx;
+                            height: 230rpx;
+                            border-radius: 10rpx;
+                        }
+                        .label-checked {
+                            position: absolute;
+                            top: -50rpx;
+                            left: -50rpx;
+                            background: #cb3233;
+                            width: 100rpx;
+                            height: 100rpx;
+                            transform: rotate(45deg);
+                            .van-icon-success {
+                                position: absolute;
+                                bottom: 38rpx;
+                                font-size: 26rpx;
+                                transform: rotate(-45deg);
+                                color: #fff;
+                                right: 6rpx;
+                            }
+                        }
+                    }
+                    .w-name {
+                        font-size: 28rpx;
+                        padding: 30rpx 0;
+                        text-align: center;
+                    }
+                    .badge-count {
+                        font-size: 20rpx;
+                        color: #fff;
+                        background: #F12C20;
+                        border-radius: 100px;
+                        padding: 2rpx 10rpx;
+                        position: absolute;
+                        bottom: 10rpx;
+                        right: 10rpx;
+                    }
+                }
+            }
+        }
+    }
+}
+
+.btn-footer {
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    border-top:1px solid rgba(204,204,204,.3);
+    .total_price{
+    	  flex:2;
+    	  background-color: #fff;
+    	  display: flex;
+    	  flex-direction: row;
+    	  justify-content: flex-end;
+    	  align-items: center;
+    	  padding-right: 10px;
+    	  font-size: 15px;
+    	  color:#000;
+    	  span{
+    	  	color:#cb3233;
+    	  }
+    }
+    .total_price_two {
+    	flex:1;
+    }
+}
+
+.space {
+    height: 20rpx;
+    background: #f5f5f5;
+}
+</style>

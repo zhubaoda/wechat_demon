@@ -1,0 +1,119 @@
+<template>
+    <view class="item-content" @tap="fabricItemClick">
+        <block wx:if="{{type==''}}">
+            <block wx:if="{{fabric.number_f}}">
+                <!-- <view class="left">
+                    <image src="{{fabric.image}}" />
+                </view> -->
+                <view class="right">
+                    <view>白中编号：{{fabric.number_f}}</view>
+                    <view>面料编号：{{fabric.number_s}}</view>
+                    <view>面料颜色：{{fabric.colour}}</view>
+                    <view>面料成分：{{fabric.component}}</view>
+                </view>
+                <view class="label-checked" style="{{fabric.is_default ? 'display: block;' : ''}}">
+                    <view class="van-icon van-icon-success"></view>
+                </view>
+            </block>
+            <block wx:else>
+                <view class="empty">点击选择面料</view>
+            </block>
+        </block>
+        <block wx:else>
+            <block wx:if="{{embroidery.content}}">
+                <view class="left">
+                    <image src="{{embroidery.position.image}}" />
+                </view>
+                <view class="right">
+                    <view>刺绣颜色：{{embroidery.color.name}}</view>
+                    <view>刺绣字体：{{embroidery.font.name}}</view>
+                    <view>刺绣内容：{{embroidery.content}}</view>
+                </view>
+            </block>
+            <block wx:else>
+                <view class="empty">点击选择刺绣</view>
+            </block>
+        </block>
+    </view>
+</template>
+<script>
+import wepy from 'wepy'
+import _ from 'underscore'
+export default class AdjustItem extends wepy.component {
+    props = {
+        checked: {
+            default: false
+        },
+        fabric: {
+            default: Object
+        },
+        embroidery: {
+            default: Object
+        },
+        type: {
+            default: ''
+        }
+    }
+    data = {
+    }
+    methods = {
+        fabricItemClick () {
+            this.$emit('fabricItemClick')
+        }
+    }
+}
+</script>
+<style lang="less">
+.item-content {
+    display: flex;
+    align-items: center;
+    background: rgba(255, 255, 255, 1);
+    border-radius: 10rpx;
+    box-shadow: 2rpx 0px 12rpx rgba(58, 58, 58, 0.15);
+    position: relative;
+    overflow: hidden;
+    .left {
+        display: flex;
+        align-items: center;
+        image {
+            width: 301rpx;
+            height: 251rpx;
+            border-radius: 10rpx 0 0 10rpx;
+        }
+    }
+    .right {
+        padding: 10px 0 10px 40rpx;
+        view {
+            font-size: 26rpx;
+            color: rgba(58, 58, 58, 1);
+            line-height: 48rpx;
+            white-space: nowrap;
+        }
+    }
+    .label-checked {
+        position: absolute;
+        top: -50rpx;
+        left: -50rpx;
+        background: #cb3233;
+        width: 100rpx;
+        height: 100rpx;
+        transform: rotate(45deg);
+        .van-icon-success {
+            position: absolute;
+            bottom: 38rpx;
+            font-size: 26rpx;
+            transform: rotate(-45deg);
+            color: #fff;
+            right: 6rpx;
+        }
+    }
+    .empty {
+        width: 100%;
+        height: 251rpx;
+        line-height: 251rpx;
+        text-align: center;
+        font-size: 26rpx;
+        color: #999;
+    }
+}
+</style>

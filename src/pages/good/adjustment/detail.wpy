@@ -1,0 +1,240 @@
+<template>
+    <view class="container--without-border cixiu-selected">
+        <block wx:if="{{type=='1'}}">
+            <view class="list-block">
+                <repeat for="{{fabric_data}}" key="index" index="index" item="item">
+                    <view class="" @tap="selectFabric({{index}})">
+                        <fabric-item class="mt20" :fabric="item"></fabric-item>
+                    </view>
+                </repeat>
+            </view>
+        </block>
+        <block wx:else>
+            <view class="embroidery-block">
+                <view class="embroidery-item">
+                    <view class="title">刺绣内容</view>
+                    <view class="content-block">
+                        <input type="text" placeholder="输入刺绣内容" maxlength="16" value="{{embroidery_content}}" bindinput="bindContentInput" placeholder-class="placeholder" class="text-input" />
+                    </view>
+                </view>
+                <repeat for="{{embroid_data}}" key="index" index="position" item="item">
+                    <view class="embroidery-item">
+                        <view class="title">{{type_name[position]}}</view>
+                        <view class="content-block">
+                            <embroidery-select :position.sync="position" :type.sync="position" :embroidery.sync="item"></embroidery-select>
+                        </view>
+                    </view>
+                </repeat>
+            </view>
+            <button class="zan-btn zan-btn--danger" @tap="comfire">确定</button>
+            <button class="zan-btn cancel-btn" @tap="back">取消刺绣</button>
+        </block>
+    </view>
+</template>
+<script>
+import wepy from 'wepy'
+import interfaces from '@/interfaces/index'
+import AuthMixin from '@/mixins/auth';
+import fabricItem from './components/fabricItem'
+import embroiderySelect from './components/embroiderySelect'
+import _ from 'underscore'
+export default class AdjustmentDetail extends wepy.page {
+    config = {
+        navigationBarTitleText: ''
+    }
+    components = {
+        'fabric-item': fabricItem,
+        'embroidery-select': embroiderySelect,
+        'embroidery-select-color': embroiderySelect,
+        'embroidery-select-front': embroiderySelect,
+    }
+    mixins = [AuthMixin]
+    data = {
+        type_name: { 'position': '刺绣位置', 'color': '刺绣颜色', 'font': '刺绣字体' },
+        type: 1,
+        embroidery_content: '',
+        id: '',
+        fabric_data: {},
+        embroid_data: {},
+        embroidery_info: {},
+        orderId: null
+    }
+
+    events = {
+        //刺绣位置选择
+        selectChange(position, index, item) {
+            let obj = this.embroid_data[position]
+            for (let key in obj) {
+                if (key === index) {
+                    obj[key].is_default = 1
+                } else {
+                    obj[key].is_default = 0
+                }
+            }
+            this.embroidery_info = Object.assign({}, this.embroidery_info, {
+                [position]: item
+            })
+            this.embroidery_info[position].key = index
+        },
+    }
+
+    isSelected (type) {
+        let sel = false
+        for (let key in this.embroid_data[type]) {
+            if (this.embroid_data[type][key].is_default) {
+                sel = true
+            }
+        }
+        return sel
+    }
+    methods = {
+        async selectFabric(index) {
+            this.fabric_data.map((item, key) => {
+                if (index === key) {
+                    item.is_default = 1;
+                } else {
+                    item.is_default = 0;
+                }
+            })
+            setTimeout(() => {
+                wepy.navigateBack();
+            }, 100)
+        },
+        async back() {
+            let res = await wepy.showModal({
+                title: '提示',
+                content: '确定取消刺绣？',
+            })
+            if (res.confirm) {
+                this.$parent.setEmbroidData({},this.orderId,this.id)
+                for (let key1 in this.embroid_data) {
+                    for (let key2 in this.embroid_data[key1]) {
+                        if (this.embroid_data[key1][key2].is_default !== 'undefined') {
+                            this.embroid_data[key1][key2].is_default = 0
+                        }
+                    }
+                }
+
+                wepy.navigateBack()
+            }
+        },
+        comfire() {
+            if (_.isEmpty(this.embroidery_content)) {
+                wx.showToast({
+                    title: '请输入刺绣内容',
+                    icon: 'none',
+                    duration: 2000
+                })
+                return
+            }
+
+            if (this.embroid_data.color && !this.isSelected('color')) {
+                wx.showToast({
+                    title: '请选择刺绣颜色',
+                    icon: 'none',
+                    duration: 2000
+                })
+                return
+            }
+            if (this.embroid_data.position && !this.isSelected('position')) {
+                wx.showToast({
+                    title: '请选择刺绣位置',
+                    icon: 'none',
+                    duration: 2000
+                })
+                return
+            }
+            if (this.embroid_data.font && !this.isSelected('font')) {
+                wx.showToast({
+                    title: '请选择刺绣字体',
+                    icon: 'none',
+                    duration: 2000
+                })
+                return
+            }
+
+            this.embroidery_info['content'] = this.embroidery_content;
+            this.$parent.setEmbroidData(this.embroidery_info, this.orderId, this.id);
+            wepy.navigateBack()
+        }
+    }
+
+    async onLoad (option) {
+        this.id = option.goodId || option.id;
+        this.orderId = option.orderId || ''
+        this.type = option.type;
+        if (this.authLoading) {
+            return
+        }
+        await this.auth()
+        let goodsInfo = this.$parent.getSettleGoods(this.orderId,this.id)
+        let { content } = this.$parent.getEmbroidData(this.orderId, this.id) || {};
+        if (!goodsInfo) {
+            goodsInfo = await this.getGoodsDetail(this.id);
+        }
+        this.embroid_data = goodsInfo.embroid_data;
+        this.fabric_data = goodsInfo.fabric_data;
+        this.embroidery_info = goodsInfo.embroid_data;
+        this.embroidery_content = content;
+        
+        this.$apply()
+    }
+
+    async getGoodsDetail(id) {
+        let res = await interfaces.getGoods(id);
+        let data = res.data;
+        return data
+    }
+    //刺绣内容赋值
+    bindContentInput(e) {
+        this.embroidery_content = e.detail.value
+    }
+}
+</script>
+<style lang="less">
+.cixiu-selected.container--without-border{
+   padding: 10rpx 20rpx;
+}
+.container--without-border {
+    .cancel-btn{
+        margin-bottom: 20rpx;
+    }
+    .list-block {
+        .mt20 {
+            margin-top: 20rpx;
+        }
+    }
+    .embroidery-block {
+        .embroidery-item {
+            padding-top: 40rpx;
+            .title {
+                font-size: 30rpx;
+                color: #8f8f8f;
+                padding: 10rpx 0;
+            }
+            .content-block {
+                .text-input {
+                    border: 1px solid #bbbbbb;
+                    border-radius: 10rpx;
+                    font-size: 28rpx;
+                    padding: 10rpx 10rpx 10rpx 18rpx;
+                }
+                .placeholder {
+                    font-size: 28rpx;
+                }
+            }
+            .grid-list-block {
+                margin-top: 30rpx;
+                .name {
+                    font-size: 30rpx;
+                    color: #8f8f8f;
+                    padding: 20rpx 0;
+                }
+            }
+            &:first-child {
+                padding-top: 0;
+            }
+        }
+    }
+}
+</style>

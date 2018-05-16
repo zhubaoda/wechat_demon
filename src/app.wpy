@@ -1,0 +1,276 @@
+<style lang="less">
+@import './style/index';
+.container{
+  width: 100%;
+  height: 100%;
+  background-color: #f5f5f5;
+  overflow: hidden;
+}
+page{
+  font-size: 14px;
+}
+view{
+  box-sizing: border-box;
+}
+image{
+  display: inline-block;
+  vertical-align: top;
+  width: auto;
+  height: auto;
+}
+button{
+  background-color: transparent;
+  padding: 0;
+  font-size: 16px;
+}
+button::after{
+  border: none;
+}
+.x-btn{
+  width: 690rpx;
+  height: 88rpx;
+  margin: 0 auto;
+  background-color: #09bb07;
+  border-radius: 10rpx;
+  line-height: 88rpx;
+  text-align: center;
+  color: white;
+}
+.line-bottom::after{
+ content: '';
+ display: block;
+ width: 100%;
+ box-sizing: border-box;
+ height: 1px;
+ border-bottom: 1px solid #ccc;
+ position: absolute;
+ left: 0;
+ transform-origin: center center;
+ z-index: -1;
+}
+ .m-btn{
+    height: 60rpx;
+    line-height: 60rpx;
+	  border-radius: 9rpx;
+    border: solid 1px #3a3a3a;
+    color: #3a3a3a;
+    font-size: 14px;
+    text-align: center;
+    padding: 0 10rpx;
+    margin: 0;
+}
+.m-btn.btn-special{
+    border: solid 1px #ce1414;
+    color: #ce1414;
+}
+.customer-info {
+    font-size: 13px;
+    line-height: 40rpx;
+    color: #000;
+    padding: 0 75rpx 0 35rpx;
+    view{
+        line-height: 48rpx;
+    }
+}
+
+.order-item__actions{
+    display: flex;
+    margin-right: -10px;
+}
+.order-item__action {
+    margin-right: 20rpx;
+}
+.line-bottom::after{
+  content: '';
+  position: absolute;
+  border-bottom: 1rpx solid #e5e5e5;
+  transform: scaleY(.5);
+  -webkit-transform: scaleY(.5);
+  width: 100%;
+  left: 0;
+  bottom: 0;
+}
+.zan_cell_custome{
+  padding: 12px 15px;
+}
+</style>
+
+<script>
+import wepy from 'wepy'
+import 'wepy-async-function'
+
+export default class extends wepy.app {
+  config = {
+    pages: [
+      'pages/order/list',
+      'pages/my',
+      'pages/commission',
+      'pages/login',
+      'pages/agreement',
+      'pages/problem',
+      'pages/order/detail',
+      'pages/order/confirm',
+      'pages/information/detail',
+      'pages/good/list',
+      'pages/good/index',
+      'pages/good/adjustment/index',
+      'pages/good/adjustment/detail'
+    ],
+    window: {
+      navigationBarBackgroundColor: '#000000',
+      navigationBarTitleText: '白中定制-顾文端',
+      navigationBarTextStyle: 'white',
+      backgroundTextStyle: 'dark',
+      backgroundColor: '#f9f9f9',
+      enablePullDownRefresh: true
+    },
+    tabBar: {
+      color: '#606060',
+      selectedColor: '#000000',
+      backgroundColor: '#FFFFFF',
+      borderStyle: 'white',
+      list: [{
+          pagePath: 'pages/order/list',
+          text: '订单',
+          iconPath: 'icons/order.png',
+          selectedIconPath: 'icons/order-selected.png'
+      }, {
+      	  pagePath: 'pages/commission',
+      	  text: '佣金',
+      	  iconPath: 'icons/order.png',
+      	  selectedIconPath: 'icons/order-selected.png'
+      }, {
+          pagePath: 'pages/my',
+          text: '我的',
+          iconPath: 'icons/usercenter.png',
+          selectedIconPath: 'icons/usercenter-selected.png'
+      }]
+    }
+  }
+
+  globalData = {
+    userInfo: null,
+    editOrder: null,
+    goodInfo: {},
+    settleGoods: null,
+    fabricInfo: null,
+    embroidData: null,
+    embroidWord: {},
+    goodData:{},
+    tech: {},
+    tabtype: null // 由于switchtab不能传参，跳转时改变这个全局变量，跳转到那个页面后取这个参数，后再设为null
+  }
+
+  constructor () {
+    super()
+    this.use('requestfix')
+    this.use('promisify')
+  }
+
+  async authorize() {
+        try {
+            return await this.getUserInfo()
+        } catch (e) {
+            let modalRes = await wepy.showModal({
+                title: '是否要打开设置页面重新授权',
+                content: '需要获取您的公开信息（昵称、头像等），请到小程序设置中打开用户信息授权',
+                confirmText: '去设置',
+                confirmColor: '#F44'
+            })
+            if (!modalRes.confirm) {
+                this.showError('授权失败，您可能有部分功能无法使用')
+                return false
+            }
+            let setRes = await wepy.openSetting()
+            if (!setRes.authSetting['scope.userInfo']) {
+                this.showError('授权失败，您可能有部分功能无法使用')
+                return false
+            }
+            await interfaces.login()
+            return true
+        }
+  }
+  async setGoodInfo(data,goodId) {
+  	this.globalData.goodInfo[goodId] = data;
+  }
+  async showError (error) {
+    return await wepy.showModal({
+      title: '错误',
+      content: error.toString(),
+      showCancel: false,
+      confirmColor: '#F44'
+    })
+  }
+    setSettleGoods(value,orderId, goodid) {
+    	 if(this.globalData.goodData[orderId]){
+    	    this.globalData.goodData[orderId][goodid] = value
+    	 } else {
+    	 	this.globalData.goodData[orderId] = {}
+    	 	this.globalData.goodData[orderId][goodid] = value
+    	 }  
+    }
+    getSettleGoods(orderId, goodid) {
+    	    if(this.globalData.goodData[orderId]){
+    	    	  return this.globalData.goodData[orderId][goodid]
+    	    }        
+    }
+
+
+    //获取刺绣信息
+    getEmbroidData(orderId, goodid) {
+    	  if(this.globalData.embroidWord[orderId]){
+        return this.globalData.embroidWord[orderId][goodid];
+      }  
+    }
+
+    //设置刺绣信息
+    setEmbroidData(data,orderId, goodid) {
+    	  if(this.globalData.embroidWord[orderId]) {
+    		this.globalData.embroidWord[orderId][goodid] = data;
+    	  } else {
+    	  	this.globalData.embroidWord[orderId] = {}
+    	  	this.globalData.embroidWord[orderId][goodid] = data;
+    	  }
+        
+    }
+  initMeasured (time) {
+      if (time.indexOf('|') === -1) {
+          return time
+      }
+      let timeRange = time.split('|')
+      let ymd = timeRange[0].slice(0, 10)
+      let md = ymd.split('-')
+      let m
+      let d
+      if (md.length === 3) {
+        m = parseInt(md[1])
+        d = parseInt(md[2])
+      }
+      let start = timeRange[0].slice(11, 16)
+      let end = timeRange[1].slice(11, 16)
+      return `${m}月${d}日 ${start}-${end}`
+  }
+
+  async getUserInfo () {
+    if (!this.globalData.userInfo) {
+      let res = await wepy.getUserInfo()
+      this.globalData.userInfo = res.userInfo
+    }
+    return this.globalData.userInfo
+  }
+      async showError (error) {
+        return await wepy.showModal({
+            title: '错误',
+            content: error.toString(),
+            showCancel: false,
+            confirmColor: '#F44'
+        })
+    }
+  guid () {
+    function s4 () {
+      return Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1)
+    }
+    return s4() + s4() + '-' + s4() + '-' + s4() + '-' + s4() + '-' + s4() + s4() + s4()
+  }
+}
+</script>

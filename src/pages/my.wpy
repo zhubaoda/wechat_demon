@@ -1,0 +1,39 @@
+<style lang="less">
+
+</style>
+<template>
+  <view class="my-info container">
+    <header :type.sync="type"></header>
+    <view class="zan-panel">
+      <view @tap="onProblemClick" class="zan-cell zan-cell--access zan_cell_custome">
+          <view class="zan-cell__bd">常见问题</view>
+          <view class="zan-cell__ft"></view>
+      </view>
+    </view>
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy'
+  import interfaces from '@/interfaces/index'
+  import Header from '@/components/header'
+  export default class My extends wepy.page {
+    config = {
+      navigationBarTitleText: '我的'
+    }
+    data = {
+    	  type: 'my'
+    }
+    components = {
+        header: Header
+    }
+    methods = {
+      onProblemClick() {
+          // this.$parent.globalData.editOrder = item
+          wepy.navigateTo({
+              url: '/pages/problem'
+          })
+      }
+    }
+  }
+</script>

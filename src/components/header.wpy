@@ -1,0 +1,75 @@
+<style lang="less">
+.head-img{
+  display: flex;
+  align-items: center;
+  width: 100%;
+  background-color: #ffffff;
+  padding: 42rpx 30rpx;
+  border-bottom:1rpx solid #e5e5e5;
+  image{
+    margin-right: 20rpx;
+    width: 100rpx;
+    height: 100rpx;
+    border-radius: 50%;
+  }
+  .head-text{
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+  }
+}
+.other_img {
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	padding: 20rpx 30rpx;
+	image{
+		margin-right:0;
+	}
+	.name {
+		margin-top:10px;
+	}
+}
+</style>
+<template>
+    <view class="head-img" wx:if="{{type === 'my'}}">
+      <image src="{{headImg}}" mode="aspectFit"/>
+      <view class="head-text">
+        <text class="nick-name">{{nickName}}</text>
+        <text class="nick-name">工号：{{adviser_no}}</text>
+        <text class="nick-name">一级顾问</text>
+      </view>
+    </view>
+    <view class="head-img other_img" wx:else>
+      <image src="{{headImg}}" mode="aspectFit"/>
+      <view class="name">{{nickName}}</view>  
+    </view>
+</template>
+
+<script>
+  import wepy from 'wepy'
+  import interfaces from '@/interfaces/index'
+  export default class My extends wepy.component {
+    data = {
+      nickName: '',
+      headImg: '',
+      adviser_no: ''
+    }
+
+    props = {
+    	  type:String
+    }
+    async getNum () {
+    	  let res = await interfaces.getNum();
+    	  console.log(233, res.data)
+    	  this.adviser_no = res.data.adviser_no
+    }
+    async onLoad () {
+      let info = await this.$parent.$parent.getUserInfo()
+      this.nickName = info.nickName
+      this.headImg = info.avatarUrl
+      await this.getNum()
+      this.$apply()
+    }
+  }
+</script>

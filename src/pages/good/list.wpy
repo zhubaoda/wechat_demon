@@ -1,0 +1,325 @@
+<template>
+    <view class="container container--without-border">
+    	    <view class="good_search">
+    	       <image class="search_img" src="https://zuizan.oss-cn-hangzhou.aliyuncs.com/wechat/poster/201805/lNdFycqCWnrW1VUg4ippS0X7KDmIOvtzVCVBRh9t.png"></image> 
+    	       <input type="text" value="{{name}}" @input="search" placeholder="请输入商品名称"/>
+    	    </view>
+    	    <!--<view class="category_good">
+    	    	   <view class="category_good_item category_item" @tap="jump('1')">
+    	    	   	 <span>品类</span>
+    	    	   	 <image class="jump_img" src="https://zuizan.oss-cn-hangzhou.aliyuncs.com/wechat/poster/201805/kLIiyJQkNgTV2jlKvPE5dpw5UG8sGRcHSyGMl2uL.png"></image>
+    	    	   </view>
+    	    	   <view class="category_item" @tap="jump('2')">
+    	    	   	 <span>价格</span>
+    	    	   	 <image class="jump_img" src="https://zuizan.oss-cn-hangzhou.aliyuncs.com/wechat/poster/201805/kLIiyJQkNgTV2jlKvPE5dpw5UG8sGRcHSyGMl2uL.png"></image>
+    	    	   </view>
+    	    </view>-->
+        <view class="goods-list">
+            <view  wx:for="{{ goods.list }}" wx:key="alias" class="goods-item" @tap="goBack({{item}})">
+                <view class="goods-item__image_wrap">
+                    <image class="goods-item__image" mode="aspectFill" src="{{ item.image }}" />
+                </view>
+                <view class="goods-item__title zan-ellipsis--l2">{{ item.name }}</view>
+                <view class="goods-item__price">¥ {{ item.sale_price }}</view>
+                <view class="add_button">增加商品</view>
+            </view>
+        </view>
+        <loadmore :loading.sync="loading" :nodata.sync="nodata" :nomore.sync="nomore" />
+    </view>
+</template>
+<script>
+import wepy from 'wepy'
+import interfaces from '@/interfaces/index'
+import Loadmore from '@/components/base/loadmore'
+import AuthMixin from '@/mixins/auth'
+
+export default class GoodsCategory extends wepy.page {
+    config = {
+        navigationBarTitleText: '',
+        enablePullDownRefresh: true
+    }
+    components = {
+        loadmore: Loadmore
+    }
+    mixins = [AuthMixin]
+    data = {
+        categoryId: null,
+        goods: {},
+        loading: false,
+        nomore: false,
+        nodata: false,
+        name: '',
+        id: '' //商品id
+    }
+    methods = {
+    	  // 选择增加商品，返回到原来的页面
+    	  async goBack (item) {
+    	  	// 如果缓存中存在这个商品，则把缓存对应商品数量加1，没有创建对应缓存
+    	  	await this.getStor(item)
+    	  	wepy.navigateBack({
+          delta: 1
+        })  
+    	  }
+    }
+    async getStor (d) {
+    	  let key = this.orderId
+        	  let obj = {}
+        	  try {
+        	    obj = await wepy.getStorage({key: key})
+        	   	if (obj.data && obj.data[d.id]) {
+        	   	  obj = JSON.parse(obj.data)
+        	   	  obj[d.id].quantity = obj[d.id].quantity + 1  	   	  
+        	   	}
+        	   	obj = JSON.stringify(obj)
+        	   	await wepy.setStorage({
+              key: key,
+              data: obj
+            })
+        	  } catch (e) {
+        	   	d.min = 1
+        	    d.quantity = 1
+        	    obj[d.id] = d
+        	    let objStr = JSON.stringify(obj)
+        	    await wepy.setStorage({
+              key: key,
+              data: objStr
+            })
+        	  }
+    }
+    search (e) {
+    	  this.name = e.detail.value
+    	  this.$apply()
+    }
+    watch = {
+    	  name(newVal, oldVal) {
+    	  	  setTimeout(() => {
+    	  		this.goods.page = 1
+            this.goods.finish = false
+            this.getFirstList(this.categoryId)
+    	  	  },200)	
+    	  }
+    }
+   
+    
+    // 向下滑动的事件
+    async onReachBottom() {
+        await this.updateGoodsList(this.categoryId)
+    }
+    // 上拉更新
+       async onPullDownRefresh () {
+           this.goods.page = 1
+           this.goods.finish = false
+           await this.getFirstList(this.categoryId);
+           wepy.stopPullDownRefresh()
+           wepy.showToast({'title': '刷新成功'})
+       }
+       async getFirstList (categoryId) {
+       	  let res = await interfaces.getGoodsList(categoryId, 1, this.name)
+       	    if(res.data.rows){
+       	    	  if (res.data.rows.length === 0) {
+                this.loading = false
+                this.nodata = true
+                this.$apply()
+              } else {
+                this.goods = {}
+                this.goods.list = res.data.rows.map((item, index) => {
+                    item.sale_price = parseFloat(item.sale_price).toFixed(2)
+//                  item['url'] = ('/pages/goods/detail?id=' + item.id)
+                    
+                    return item
+                })
+                this.goods.page = 2
+                this.goods.finish = res.data.rows.length !== 10
+                this.loading = false
+                this.nomore = this.goods.finish
+                this.$apply()
+              }
+       	    } else {
+       	    	  this.loading = false
+              this.nodata = true
+              this.$apply()
+       	    }
+       }
+    // 更新商品列表
+    async updateGoodsList(categoryId) {
+        if (this.loading) {
+            return
+        }
+        this.loading = true
+        if (!this.goods.list) {
+            this.getFirstList(categoryId);
+        } else {
+            if (this.goods.finish) {
+                this.loading = false
+                return
+            }
+            let page = this.goods.page
+            let res = await interfaces.getGoodsList(categoryId, page, this.name)
+            res.data.rows = res.data.rows.map(item => {
+                item.sale_price = parseFloat(item.sale_price).toFixed(2)
+                item['url'] = ('/pages/goods/detail?id=' + item.id)
+                return item
+            })
+            this.goods.list = this.goods.list.concat(res.data.rows)
+            this.goods.page++
+            this.goods.finish = res.data.rows.length !== 10
+            this.loading = false
+            this.nomore = this.goods.finish
+            this.$apply()
+        }
+    }
+//  async onShow () {
+//      this.$parent.setFabricInfo({})
+//      this.$parent.setEmbroidData({})
+//      this.$parent.setTech({})
+//      if (this.authLoading) {
+//          return
+//      }
+//      await this.auth()
+//      let shopInfo = await this.$parent.getShopInfo()
+//      wepy.setNavigationBarTitle({
+//          title: '产品列表'
+//      })
+//  }
+    async onLoad (option) {
+        var self = this
+        await this.$parent.setGoodInfo(null)
+        this.id = option.id || '';
+        this.orderId = option.orderId || ''
+        this.categoryId = '';     
+        var scene = decodeURIComponent(option.scene).split('&')
+        scene.forEach(item => {
+        var param = item.split('=')
+          if (param[0] === 'categoryId') {
+            self.categoryId = param[1]
+          }
+        })
+        await wepy.showLoading({ title: '加载中' })
+        await this.updateGoodsList(this.categoryId)
+        this.$apply()
+        wepy.hideLoading()
+    }
+}
+</script>
+<style lang="less">
+.container {
+   width: 100vw;
+   background: #f9f9f9;
+   box-sizing: border-box;
+   overflow-x: hidden;
+   overflow-y: auto;
+}
+.container--without-border{
+   width: 100vw;
+   min-height: 100vh;
+   overflow-x: hidden;
+   overflow-y: auto;
+   box-sizing:border-box;
+}
+.container--without-border:before {
+  display: none;
+}
+.container .goods-list {
+    margin: 0 auto;
+    padding: 10rpx 20rpx;
+    background: #fff;
+}
+
+.container .goods-item {
+    position: relative;
+    display: inline-block;
+    width: 335rpx;
+    margin: 20rpx 10rpx
+}
+
+.container .goods-item--sold-out:after {
+    content: " ";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url(https://zuizanjscss.oss-cn-hangzhou.aliyuncs.com/weapp/sellout.png) no-repeat;
+    background-position: 50%;
+    background-size: 50% 50%;
+    background-color: rgba(0, 0, 0, .25)
+}
+
+.container .goods-item__image_wrap {
+    height: 335rpx;
+    width: 335rpx;
+    position: relative;
+}
+
+.container .goods-item__image {
+    width: 335rpx;
+    height: 335rpx;
+    vertical-align: bottom
+}
+
+.container .goods-item__title {
+    line-height: 18px;
+    margin-top: 16rpx;
+    font-size: 12px;
+    color: #333
+}
+
+.container .goods-item__price {
+    margin-top: 18rpx;
+    font-size: 14px;
+    line-height: 14px;
+    color: #cb3233;
+}
+.add_button {
+	width:100%;
+	background-color: red;
+	color:#fff;
+	padding:5px;
+    text-align:center;
+    margin-top:10px;
+}
+.good_search {
+  border:1px solid #ccc;
+  margin: 5px 15px;
+  padding: 5px 10px;
+  border-radius: 4px;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  input{
+  	flex:1;
+  	
+  }
+}
+.search_img {
+	width:20px;
+	height:20px;
+	margin-right:10px;
+}
+.category_good {
+	display: flex;
+	flex-direction: row;
+	justify-content: center;
+	align-items: center;
+	background-color: #fff;
+	margin: 10px 15px;
+    padding: 5px 10px;
+	box-sizing: border-box;
+	.category_good_item {
+	  border-right: 1px solid #ccc;  
+	}
+	.category_item {
+	  display: flex;
+	  flex-direction: row;
+	  justify-content: center;
+	  align-items: center;
+	  flex:1;
+	}
+	.jump_img{
+		width:14px;
+		height:14px;
+		margin-left:10px;
+	}
+}
+</style>

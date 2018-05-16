@@ -1,0 +1,143 @@
+<style lang="less">
+.commission {
+  .display_flex{
+  	display:flex;
+  	flex-direction:row;
+  	align-items: center; 
+  	justify-content: center;
+  }
+  .display_flex_two {
+  	display:flex;
+  	flex-direction:row;
+  	justify-content: space-between;
+  	align-items: center; 
+  }
+  height:100vh;
+  .money_box {
+  	padding: 15px 0;
+  	border-radius: 4px;
+  	.money {
+  	 background-color: #fff;
+  	 padding: 10px;
+  	 .title {
+  	    padding:0 0 15px 0;
+  	    text-align: center;
+  	  }
+  	  .money_top {
+  	  	padding: 0 10px 10px 10px;
+  	  	border-bottom: 1px solid #ccc;
+  	  }
+  	  .money_bottom {
+  	  	padding: 15px 0 0 0;
+  	  }
+  	  .money_bottom_item { 	
+  	  	flex:1;
+  	  	display: flex;
+  	  	flex-direction: column;
+  	  	justify-content: center;
+  	  	align-items: center;
+  	  	color:#000;
+  	  	font-size: 15px;
+  	  	.first {
+  	  		color:#666;
+  	  		font-size: 13px;
+  	  		padding-bottom: 15px;
+  	  	}
+  	  }
+  	 .presented_money{	 		
+  	 	span{
+  	 		color:red;
+  	 		font-size: 20px;
+  	 	}
+  	 }
+  	 .presented_money_right{
+  	 	span{
+  	 		font-size: 16px;
+  	 	}
+  	 	.arrow {
+  	 		height: 16px;
+  	 		width:16px;
+  	 		margin-left:10px;
+  	 	}
+  	 }
+  	}
+  }
+
+}
+</style>
+<template>
+  <view class="commission container">
+  	<header></header>
+    <view class="money_box">
+    	  <view class="money">
+    	  	<view class="money_top">
+    	  	   <view	 class="title">可提现奖金</view>
+    	  	   <view	 class="display_flex presented_money">
+    	  	     <span>{{obj.total_commision_amount}} 元</span>
+    	  	     <!--<view class="display_flex presented_money_right">
+    	  	     	<span>去提现</span>
+    	  	     	<image class="arrow" src="https://zuizan.oss-cn-hangzhou.aliyuncs.com/wechat/poster/201805/jV2WqSK8Ck5twSDWM35PoEumhelQj7idk7kJ2ylX.png"></image>
+    	  	     </view>-->
+    	       </view>
+    	  	</view>
+    	  	<view class="display_flex money_bottom">
+    	  	   <view	 class="money_bottom_item">
+    	  		 <span class="first">待到账奖励</span>
+    	  		 <span>{{obj.total_commision_wait}}元</span>
+    	  	   </view>
+    	  	   <view	 class="money_bottom_item">
+  	         <span class="first">累计奖励</span>
+  	         <span>{{obj.total_cash_amount}}元</span>
+           </view>
+    	  	</view>
+    	  </view>
+    </view>
+    <arrow :title.sync="title"></arrow>
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy'
+  import interfaces from '@/interfaces/index'
+  import Header from '@/components/header'
+  import Arrow  from '@/components/base/arrow'
+  export default class My extends wepy.page {
+    config = {
+      navigationBarTitleText: '佣金'
+    }   
+    components = {
+        header: Header,
+        arrow: Arrow
+    }
+    data = {
+      title: '订单明细',
+      obj: null
+    }
+    
+    async getInfor () {
+    	  let res = await interfaces.myMoney()
+      this.obj = res.data
+      this.$apply()
+    }
+    async onPullDownRefresh () {
+        await this.getInfor()
+        wepy.stopPullDownRefresh()
+        wepy.showToast({'title': '刷新成功'})
+    }
+    
+    events = {
+    	  jump () {
+    	  	wepy.switchTab({
+      	  url: '/pages/order/list'
+      	})
+    	  }
+    }
+    methods = {
+      
+    }
+
+    async onLoad () {
+      await this.getInfor()
+    }
+  }
+</script>

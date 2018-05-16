@@ -1,0 +1,184 @@
+<style lang="less">
+.login{
+  height: 100%;
+  font-size: 16px;
+  overflow: hidden;
+  .login-logo{
+    width: 200rpx;
+    height: 250rpx;
+    margin: 125rpx auto 112rpx;
+    image{
+      width: 200rpx;
+      height: 200rpx;
+    }
+  }
+  .login-input-wrapper{
+    border-top: 1px solid #e5e5e5;
+    border-bottom: 1px solid #e5e5e5;
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 70rpx;
+  }
+  .input-label{
+    height: 90rpx;
+    line-height: 90rpx;
+    padding-left: 30rpx;
+    display: flex;
+    position: relative;
+    &.one-bottom{
+      border-bottom: 1px solid #e5e5e5;
+    }
+    .code-btn{
+      box-sizing: border-box;
+      padding: 0 30rpx;
+      font-size: 12px;
+      min-width: 184rpx;
+      max-width: 250rpx;
+      height: 60rpx;
+      line-height: 60rpx;
+      border-radius: 6rpx;
+      border: solid 1px #1aad19;
+      color: #1aad19;
+      margin-right: 33rpx;
+      align-self: center;
+    }
+    text{
+      width: 120rpx;
+    }
+    input{
+      outline: none;
+      flex: 1;
+      height: 100%;
+      line-height: 100%;
+      padding-left: 60rpx;
+    }
+  }
+}
+.x-btn.mtop{
+  margin-top: 32rpx;
+}
+</style>
+<template>
+  <view class="login">
+    <view class="login-logo">
+      <image class="login-img" src="../icons/logo.png"></image>
+    </view>
+    <form bindsubmit="formSubmit" class="login-form">
+      <view class="login-input-wrapper">
+        <label class="input-label one-bottom">
+          <text>手机号</text>
+          <input placeholder="请输入手机号" auto-focus name="phone" type="number"
+          @input="bindPhoneInput"
+          value="{{phoneVal}}"/>
+          <view class="code-btn {{ btnLoading ? 'zan-btn--loading' : ''}} {{disabled ? 'x-btn-disabled' : ''}}" catchtap="getCode">{{ codeText }}</view>
+        </label>
+        <label class="input-label">
+          <text>验证码</text>
+          <input placeholder="请输入短信验证码" name="code" type="number"/>
+        </label>
+      </view>
+      <button class="x-btn" formType="submit" report-submit="{{true}}">登录</button>
+    </form>
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy'
+  import interfaces from '@/interfaces'
+
+  export default class Login extends wepy.page {
+    config = {
+      navigationBarTitleText: '登录'
+    }
+    components = {}
+
+    mixins = []
+
+    data = {
+      phoneVal: '',
+      codeText: '获取验证码',
+      timer: null,
+      btnLoading: false,
+      disabled: false
+    }
+
+    computed = {}
+
+    startTimer () {
+      let s = 59
+      this.codeText = `剩余${s}秒`
+      this.timer = setInterval(() => {
+        s--
+        if (s < 10) {
+          this.codeText = `剩余0${s}秒`
+        }else{
+          this.codeText = `剩余${s}秒`
+        }
+        
+        if (s <= 0) {
+          this.codeText = '获取验证码'
+          this.disabled = false
+          clearInterval(this.timer)
+        }
+        this.$apply()
+      }, 1000)
+      this.$apply()
+    }
+
+    methods = {
+      bindPhoneInput (e) {
+        this.phoneVal = e.detail.value
+      },
+      async getCode () {
+        if (+this.phoneVal === 0) {
+          this.$parent.showError('手机号不能为空')
+          return
+        }
+        if (this.disabled) { return }
+        this.btnLoading = true
+        this.codeText = ''
+        let res = await interfaces.sendCode({
+          mobile: this.phoneVal
+        })
+        if (!res.hasError) {
+          wepy.showToast({'title': '验证码发送成功'})
+          this.startTimer()
+          this.disabled = true
+        } else if (res.error) {
+          this.codeText = '获取验证码'
+          this.$parent.showError(res.error)
+        }
+        this.btnLoading = false
+        this.$apply()
+      },
+      async formSubmit (event) {
+        if (+event.detail.value.phone === 0) {
+          this.$parent.showError('手机号不能为空')
+          return
+        }
+        if (+event.detail.value.code === 0) {
+          this.$parent.showError('验证码不能为空')
+          return
+        }
+        let res = await interfaces.login({
+          mobile: event.detail.value.phone,
+          code: event.detail.value.code
+        })
+        // 跳转
+        if (!res.hasError) {
+          wepy.showToast({'title': '登录成功'})
+          setTimeout(() => {
+            wepy.switchTab({url: '/pages/my'})
+          }, 1000)
+        } else if (res.error) {
+          this.$parent.showError(res.error)
+        }
+      }
+    }
+
+    events = {}
+
+    async onLoad() {
+    }
+  }
+</script>

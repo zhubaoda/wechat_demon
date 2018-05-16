@@ -1,0 +1,788 @@
+<style lang="less">
+.order-container {
+    padding-bottom: 60px;
+    overflow-y: auto;
+    width: 100%;
+    height:100vh;
+    background-color: #f5f5f5;
+    color: #3a3a3a;
+}
+.dingzhi-box{
+    padding: 30rpx 75rpx 30rpx 35rpx;
+}
+.order-status {
+    margin-top: 0;
+}
+.order-info {
+    line-height: 1.8;
+    font-size: 14px;
+    padding: 12px 15px;
+}
+.dingzhi-box-special{
+    font-size: 14px;
+}
+.order-total {
+    overflow: hidden;
+    padding: 12px 15px;
+    line-height: 26px;
+    box-sizing: border-box;
+}
+
+.order-pay {
+    display: flex;
+    justify-content: flex-end;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 96rpx;
+    z-index: 1111;
+    align-items: center;
+}
+
+.order-pay__container {
+    overflow: hidden;
+    height: 50px
+}
+
+.order-pay__price {
+    color: #f44
+}
+
+.order-pay__btn {
+    margin: 20rpx;
+}
+
+.zan-panel{
+    border: none;
+    color: #3a3a3a;
+}
+.shop_order {
+	padding-left: 5px;
+	background-color: #fff;
+}
+.shop_top {
+	display: flex;
+	flex-direction: row;
+	justify-content: flex-end;
+	padding: 6px 10px;
+	border-bottom: 1px solid rgba(204,204,204, .6);
+   span{
+   	font-size: 16px;
+   	color:#666;
+   }
+}
+.shop_center {
+    display: flex;
+	flex-direction: row;
+	justify-content: space-between;
+	padding: 8px 8px 8px 0px;
+	box-sizing: border-box;
+	border-bottom: 1px solid rgba(204,204,204, .6);
+	.shop_center__img {
+		width:90px;
+		height:90px;
+		border: 1px solid rgba(204,204,204, .6);
+		margin: 0 10px;
+	}
+	.shop_center_right {
+		margin-left: 5px;
+		box-sizing: border-box;
+		flex:1;
+		display: flex;
+	    flex-direction: column;
+	    justify-content: space-between;
+	    box-sizing: border-box;
+	    .center_right_top {
+	      display: flex;
+	      flex-direction: column;
+	      .right_top_first {
+	      	font-size:14px;
+	      } 
+	      .right_top_second {
+	      	font-size:12px;
+	      	color:darkgreen;
+	      } 
+	      span{
+	      	width: 160px;
+	      	white-space: nowrap;
+            text-overflow: ellipsis;
+            overflow: hidden;
+	      }
+	    }
+	}
+}
+.center_right_bottom {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	justify-content: space-between;
+	.money {
+		color: red;
+	}
+}
+.add_goods {
+	width:100%;
+	/*background-color: red;*/
+	text-align: center;
+	padding: 5px 0;
+	color:#000;
+	margin:10px 0;
+}
+.all_money {
+	padding-left:5px;
+	background-color: #fff;
+	.all_money_box{
+	  display:flex;
+	  flex-direction: row;
+	  align-items: center;
+	  justify-content: space-between;
+	  padding: 8px 10px;
+	  border-bottom: 1px solid rgba(204,204,204, .6);
+	}
+	.contact {
+      justify-content:flex-start;
+	}
+	.order_no {
+	  display:flex;
+	  flex-direction: column;
+	  align-items: flex-start;
+	  justify-content: center;
+	  padding: 8px 10px;
+	}
+}
+.description {
+	padding:20px 10px;
+	background-color: #fff;
+	.description_box{
+	  padding:10px 10px 10px 10px;
+      border: 1px solid rgba(204,204,204, .6);
+	  border-radius: 4px;
+	  .title{
+	  	font-size: 16px;
+	  	color:#000;
+	  }
+	  .content {
+	  	background-color: #f5f5f5;
+	  	padding: 10px 5px;
+	  	border-radius: 3px;
+	  }
+	  .photo {
+	  	padding: 10px 5px;
+	  	display: flex;
+	  	flex-direction: row;
+	  	image{
+	  		width: 60px;
+	  		height:60px;
+	  		border:1px solid #ccc;
+	  		margin-right: 10px;
+	  	}
+	  }
+	}
+	
+}
+
+</style>
+<template>
+    <view class="container detail-pd-50">
+        <view class="order-container zan-font-14">
+            <view class="zan-panel order-status">
+                <view class="zan-cell zan_cell_custome">
+                    订单状态：<span wx:if="{{support && support.status == '20'}}">售后完成</span>
+                    <span wx:else>{{ statusStr }}</span>	
+                </view>
+            </view>
+            <view class="zan-panel" wx:if="{{measure_order.status !== 'after' && measure_order.commision_type}}">
+                <view class="zan-card customer-info dingzhi-box">
+                    <view class="dingzhi-box-special">定制对象（上门量体） </view>
+                    <view>用户姓名：{{measure_order.name}} </view>
+                    <view>手机号码：{{measure_order.mobile}} </view>
+                    <view>所在地区：{{measure_order.combineAddress}} </view>
+                    <view>预约时间：{{measure_order.measured_at}} </view>
+                </view>
+            </view>
+            <view class="shop_order shop zan-panel" >
+        	      <repeat  for="{{ product_list }}" item="goodsItem" key="index">
+        	        <view class="shop_top" wx:if="{{measure_order.status === 'tovisit'}}">
+        	   	      <span  @tap="deletGoods({{index}},{{goodsItem.id}})">删除商品</span>
+        	        </view>
+        	        <view class="shop_center">
+        	   	    <image class="shop_center__img" src="{{ goodsItem.image }}" mode="aspectFit"></image>
+        	   	    <view class="shop_center_right">
+        	   	  	   <view class="center_right_top">
+        	   	  	     <span class="right_top_first">{{ goodsItem.name }}</span>
+        	   	  	     {{goodsItem.num}}
+        	   	  	   </view>
+        	   	  	   <view class="center_right_bottom">
+        	   	  	   <span class="money" wx:if="{{goodsItem.sale_price}}">￥{{goodsItem.sale_price}}元</span>
+        	   	  	   <span class="money" wx:if="{{!goodsItem.sale_price && goodsItem.price}}">￥{{goodsItem.price}}元</span>
+        	   	  	   <quantity wx:if="{{measure_order.status === 'tovisit'}}" :min.sync="goodsItem.min" :max.sync="goodsItem.max" :quantity.sync="goodsItem.quantity" :componentId.sync="goodsItem.id"></quantity>
+        	   	  	   <span wx:if="{{measure_order.status !== 'tovisit' && measure_order.status !== 'after'}}">x{{goodsItem.quantity}}</span>
+        	   	  	   <span wx:if="{{measure_order.status == 'after'}}">x{{goodsItem.num}}</span>
+        	   	  	 </view>
+        	   	    </view>
+        	       </view>
+        	       <arrow wx:if="{{measure_order.status === 'tovisit'}}" :show="adjust[index].show"  :title="adjust[index].title" :componentId.sync="goodsItem"></arrow>
+        	      </repeat>
+           </view> 
+           
+           <view class="add_goods" @tap="addClick" wx:if="{{measure_order.status === 'tovisit'}}">增加商品</view>
+           <view class="description" wx:if="{{measure_order.status === 'after'}}">
+           	 <view class="description_box">
+           	  <view class="title">问题描述</view>
+           	  <view class="content">{{ support.remarks }}</view>
+           	 </view>
+           </view>
+           <view class="description" wx:if="{{measure_order.status === 'after'}}">
+           	 <view class="description_box">
+           	  <view class="title">商品图片</view>
+           	  <view class="photo">
+           	  	<image wx:for="{{ support.image }}" wx:key="index" src="{{item}}" mode="aspectFit"></image>
+           	  </view>
+           	 </view>
+           </view>
+           <view class="all_money" wx:if="{{measure_order.status === 'after'}}">
+           	<view class="all_money_box contact">
+           	 <span>联系人：</span>
+           	 <span>{{ support.name }}</span>
+           	 </view>
+           </view>
+           <view class="all_money" wx:if="{{measure_order.status === 'after'}}">
+           	<view class="all_money_box contact">
+           	 <span>联系电话：</span>
+           	 <span>{{ support.mobile }}</span>
+           	 </view>
+           </view>
+           
+           <view class="all_money" wx:if="{{measure_order.status !== 'after'}}">
+           	<view class="all_money_box">
+           	 <span>实付款</span>
+           	 <span>￥{{ allmoneys }}</span>
+           	 </view>
+           </view>
+           
+           <view class="all_money" wx:if="{{ (measure_order.paid_at && !commision_type) || has_money}}">
+           	<view class="all_money_box">
+           	 <span>佣金提成（待到账）</span>
+           	 <span wx:if="{{measure_order.status != 'unpaid'}}">￥{{ measure_order.commision }}</span>
+           	 <span wx:else>等待买家付款</span>
+           	</view>
+           </view>
+           
+           <view class="all_money">
+           	<view class="order_no">
+           	 <span>订单编号：{{measure_order.order_no}}</span>
+           	 <span>创建时间：{{measure_order.created_at}}</span>
+           	 </view>
+           </view>
+        </view>
+        
+        
+        <!-- 底部按钮 -->
+        <view class="zan-panel order-pay" wx:if="{{ measure_order.btns.length > 0 }}">
+            <block wx:for="{{ measure_order.btns }}" wx:key="index" wx:for-item="btn">
+                <button wx:if="{{ btn === 'cancel'}}" class="order-item__action m-btn" catchtap="onCancelOrder">
+                    取消预约
+                </button>
+                <button wx:if="{{ btn === 'modify'}}" class="order-item__action m-btn" catchtap="onModifyClick">
+                    修改信息
+                </button>
+                <button wx:if="{{ btn === 'confirm'}}" class="order-item__action m-btn btn-special" catchtap="onConfirmClick">
+                    确认预约
+                </button>
+                <button wx:if="{{ btn === 'uploading'}}" class="order-item__action m-btn" catchtap="onUploadClick">
+                    上传数据
+                </button>
+                <button wx:if="{{ btn === 'tocomplete'}}" class="order-item__action m-btn" catchtap="onToCompleteClick">
+                    量体完成
+                </button>
+                <button wx:if="{{ btn === 'contact'}}" class="order-item__action m-btn" open-type="contact">
+                    联系客服
+                </button>
+                <button wx:if="{{ btn === 'contactCus'}}" class="order-item__action m-btn" catchtap="contactCus">
+                    联系用户
+                </button>
+                <button wx:if="{{ btn === 'sellAfterOver' && support.status != '20'}}" class="order-item__action m-btn" catchtap="afterSell">
+                    售后完成
+                </button>
+            </block>
+        </view>
+    </view>
+    <toast></toast>
+</template>
+<script>
+import wepy from 'wepy'
+import interfaces from '@/interfaces/index'
+import dataConfig from './data/config'
+import Toast from '@/components/base/toast'
+import quantity from '@/components/base/quantity'
+import Arrow  from '@/components/base/arrow'
+let staObj = {
+    '10': '待支付',
+    '20': '等待顾问确认',
+    '30': '等待顾问上门',
+    '40': '待上传',
+    '50': '交易关闭',
+    '60': '待上传',
+    '70': '定制中',
+    '80': '待收货',
+    '90': '售后',
+    '100': '已完成'
+}
+
+export default class Detail extends wepy.page {
+    config = {
+        navigationBarTitleText: '订单详情'
+    }
+    components = {
+        toast: Toast,
+        quantity: quantity,
+        arrow: Arrow
+    }
+    data = {
+        order: {},
+        statusStr: '',
+        id: 0,
+        userData: '',
+        measure_order: {},
+        product_list: [],
+        support: {},
+        tests: true,
+        status: null,
+        measure_order_id: null,
+        has_money: 0
+    }
+    events = {
+    	   async zanQuantityChange (e) {
+    	     let data = this.$parent.globalData.goodInfo 
+    	     let key = this.id    	     
+    	     // 因为此时缓存是肯定存在的不用try catch记录加或者减掉的商品数量存放缓存里
+    	     let obj = await wepy.getStorage({key: key})
+        	 if (obj.data) {     	   		
+        	   obj = JSON.parse(obj.data)
+        	   obj[e.componentId].quantity = e.quantity
+        	 }
+    	     obj = JSON.stringify(obj)
+        	 wepy.setStorage({
+           key: key,
+           data: obj
+         })	     
+    	   	 this.product_list.map(d => {
+    	   	   if (d.id === e.componentId) {
+    	   	     d.quantity = e.quantity
+    	   	   }
+    	   	}) 	
+    	   	 this.$apply()
+    	   },
+    	   jump (e) {
+    	   	  wepy.navigateTo({
+            url: '/pages/good/adjustment/index?id=' + e.id + '&orderId=' + this.id
+          })  
+    	   }
+    }
+    computed = {
+    	   // 实付款实时计算
+    	   allmoneys () {
+    	   	 if(this.product_list) {
+    	   	 	let all = 0;
+    	   	 	this.product_list.map(d => {
+    	   	 		console.log(13, d.quantity, d.sale_price)
+    	   	 		let price = 0;
+    	   	 		// 有的情况可能接口给的不是sale_price，而是sale_price
+    	   	 		if (d.sale_price) {
+    	   	 			price = d.sale_price
+    	   	 		} else if(d.price) {
+    	   	 			price = d.price
+    	   	 		}
+    	   	 		all = +d.quantity * (+price) + (+all)
+    	   	 	})
+    	   	 	return all.toFixed(2)
+    	   	 } else {
+    	   	 	return 0
+    	   	 }
+    	   },
+    	   adjust () {
+    	   	 // 实时计算选了工艺细节没，因为小程序不支持方法传参的计算返回到view层，所以这里对整个list计算
+    	   	 let arr = []  	   	 
+    	   	 this.product_list.map(d => {
+    	    	   let obj = {}
+    	    	   obj.show = 0
+    	    	   obj.title = '调整工艺细节完成'
+	    	   let goodsInfo = this.$parent.getSettleGoods(this.id,d.id);
+	   	   if (goodsInfo) {	
+      	     let tech_details = goodsInfo.tech_details
+      	     if(!this.$parent.globalData.tech[this.id]) {
+      	     	obj.show = 1
+      	     } else {
+      	     	if(this.$parent.globalData.tech[this.id][d.id]){
+      	     	  for (let key in tech_details) { 
+                    if (!this.$parent.globalData.tech[this.id][d.id][tech_details[key].id]) {
+                      obj.show = 1
+                    }
+                  }
+      	     	} else {
+      	     	  obj.show = 1
+      	     	}
+      	     }	 
+      	    } else {
+      		  obj.show = 1
+      	    }  
+      	    if(obj.show){
+      	    	  obj.title = '请调节工艺细节'
+      	    }
+      	    arr.push(obj)
+      	  })
+      	  return arr
+    	   }
+    }
+    methods = {
+    	    // 增加商品
+        addClick (item) {
+        	  wepy.navigateTo({
+            url: '/pages/good/list?id=' + item.id + '&orderId=' + this.id
+          })  
+        },
+        // 删除商品
+       async  deletGoods (index,id) {
+        	  // 界面上删除
+        	  this.product_list.splice(index, 1)
+        	  // 删除存在app入口的数据（之前程序员写的）
+        	  if (this.$parent.globalData.goodInfo[id]) {
+        	  	delete  this.$parent.globalData.goodInfo[id]
+        	  }
+        	  // 删除本地data删除的数据，同步的对缓存进行删除
+        	  let key = this.id
+        	  let obj = {}
+        	  try {
+        	    obj = await wepy.getStorage({key: key})
+        	   	if (obj.data) {     	   		
+        	   	  obj = JSON.parse(obj.data)
+        	   	  if (obj[id]) {
+        	   	  	delete obj[id]
+        	   	  }
+        	   	  obj = JSON.stringify(obj)
+        	   	  if (obj == "{}") {
+        	   	  	wepy.removeStorage({key: key})
+        	   	  } else {
+        	   	  	wepy.setStorage({
+                  key: key,
+                  data: obj
+                })
+        	   	  }	     
+        	    }
+        	  } catch (e) {
+        
+        	  }
+        	  // 删除对应的应选择刺绣数据，和工艺细节
+        	  if (this.$parent.globalData.goodData[this.id] && this.$parent.globalData.goodData[this.id][id]) {
+        	  	delete this.$parent.globalData.goodData[this.id][id]
+        	  }
+        	  if (this.$parent.globalData.embroidWord[this.id] && this.$parent.globalData.embroidWord[this.id][id]) {
+        	  	delete this.$parent.globalData.embroidWord[this.id][id]
+        	  }
+
+        	  if (this.$parent.globalData.tech[this.id] && this.$parent.globalData.tech[this.id][id]) {
+        	  	delete this.$parent.globalData.tech[this.id][id]
+        	  }
+        },
+        async onCancelOrder () {
+            let res = await wepy.showModal({content: '确定取消预约？'})
+            if (res.confirm) {
+               let Res = await interfaces.cancelOrder({
+                   id: this.measure_order_id
+               })
+               if (!Res.hasError) {
+                   wepy.showToast({title: '取消预约成功'})
+//                 await this.refresh()
+                   this.$parent.globalData.tabtype = 'toconfirmed';
+          		   wepy.switchTab({
+                     url: '/pages/order/list'
+                   })
+               } else if (Res.error) {
+                   this.$parent.showError(Res.error)
+               }
+            }
+        },
+        onModifyClick () {
+            this.$parent.globalData.editOrder = this.measure_order
+            wepy.navigateTo({
+                url: '/pages/order/confirm'
+            })
+        },
+        async onConfirmClick () {
+            let res = await wepy.showModal({content: '确认预约？'})
+            if (res.confirm) {
+               let Res = await interfaces.takeOrder({
+                   id: this.measure_order_id
+               })
+               if (!Res.hasError) {
+                   wepy.showToast({title: '预约成功'})
+//                 await this.refresh()
+                   this.$parent.globalData.tabtype = 'tovisit';
+          		   wepy.switchTab({
+                     url: '/pages/order/list'
+                   })
+               } else if (Res.error) {
+                   this.$parent.showError(Res.error)
+               }
+            }
+        },
+        async onUploadClick () {
+            wepy.navigateTo({
+                url: '/pages/information/detail?user_id=' + this.measure_order.user_id + '&order_no=' + this.measure_order.measure_order_no
+            })
+        },
+        // 售后完成
+        async afterSell () {
+        	  let res = await interfaces.confirmAfter(this.id)
+        	  if (res.success) {
+        	  	if (res.data.status == 20) {
+        	  	   await this.getDetails()
+        	  	}
+        	  }
+        },
+        // 联系用户
+        async contactCus () {
+        	  if (this.support && this.support.mobile) {
+        	  	 wepy.makePhoneCall({
+              phoneNumber: this.support.mobile
+             })
+        	  }  	 
+        },
+        // 量体完成
+        async onToCompleteClick () {
+        	  // 提交订单数据前校验 	  
+        	  if (this.product_list.length === 0) {
+        	  	this.$parent.showError('请添加至少一个商品')
+            return
+        	  }
+        	  let show = true;
+          await this.product_list.map(d => {
+          	let goodsInfo = this.$parent.getSettleGoods(this.id,d.id)
+          	if (goodsInfo) {	
+          	let tech_details = goodsInfo.tech_details
+          	    if (!this.$parent.globalData.tech[this.id]) {
+            	      this.$parent.showError('请选择完整工艺细节')
+                  	show = false
+                  	return
+                } 
+                
+                if(!this.$parent.globalData.tech[this.id][d.id]) {
+                	  show = false
+                	  this.$parent.showError('请选择完整工艺细节')
+                	  return
+                  
+                }
+                
+          		for (let key in tech_details) { 
+                  if (!this.$parent.globalData.tech[this.id][d.id][tech_details[key].id]) {
+                    this.$parent.showError('请选择完整工艺细节')
+                    show = false
+                    return
+                  }
+                }
+          	} else {
+          		this.$parent.showError('请选择完整工艺细节')
+          		show = false
+                return
+          	}   
+          })
+          // 提交订单数据，数据格式化
+          if (show) {
+          	let keys = (this.id).toString()
+            let datas = {}
+            datas.id= this.measure_order_id
+            console.log(14, this.measure_order_id)
+            let product_items = [];
+            await this.product_list.map(d => {
+          	  let obj = {}
+          	  obj.product_id = d.id
+          	  obj.num = d.quantity
+          	  obj.product_data = {}
+          	  obj.product_data.fabric = d.fabric_id_list
+          	  obj.product_data.tech = [];
+          	  if (this.$parent.globalData.tech[this.id]) {
+          		let tech = this.$parent.globalData.tech[this.id][d.id]
+          	    for(var key in tech) {
+          	      let techObj = {}
+          	      techObj.style = key
+          	      techObj.position = tech[key]
+          	      obj.product_data.tech.push(techObj)
+          	    }
+          	  }
+          	  obj.product_data.embroid = {}
+          	  if(this.$parent.globalData.embroidWord[this.id] && this.$parent.globalData.embroidWord[this.id][d.id]){
+                obj.product_data.embroid.color = this.$parent.globalData.embroidWord[this.id][d.id].color.key;
+                obj.product_data.embroid.font = this.$parent.globalData.embroidWord[this.id][d.id].font.key;
+             } 	
+          	 product_items.push(obj)
+          })
+          datas.product_items = product_items;
+          // 提交接口
+          interfaces.modifyOrder(datas).then((suc)=>{
+          	if (suc.success) {
+          		// 调用成功清除stroage缓存, 和全局变量里面的存放的工艺信息
+          		wepy.removeStorage({
+				  key: keys
+				})
+          		if (this.$parent.globalData.goodData[this.id]) {
+          			delete this.$parent.globalData.goodData[this.id]
+          		}
+          		if (this.$parent.globalData.embroidWord[this.id]) {
+          			delete this.$parent.globalData.embroidWord[this.id]
+          		}
+          		this.$parent.globalData.tabtype = 'tocomplete';
+          		wepy.switchTab({
+                  url: '/pages/order/list'
+                })
+          	} else {
+          		this.$parent.showError(suc.error)
+          	}
+          }).catch((err) => {
+
+          })
+        }
+      }
+    }
+    async refresh () {
+        let res = await interfaces.getOrderDetail({
+            id: this.id
+        })
+        console.log(13, res.data)
+        this.statusObj(res.data.measure_order)
+    }
+    // 区分待上传制定中
+    async statusObj (res) {
+    	   // 在40，60时候有量体数据和无量体数据一个是定制中，一个是dai'shang'chau
+    	   if (res.status === 40 || res.status === 60) {
+    	   	 if (res.user_params_data != '[]') {
+    	   	 	this.statusStr = '定制中'
+    	   	 	this.has_money = 1
+    	   	 } else {
+    	   	 	this.statusStr = '待上传'
+    	   	 	this.has_money = 0
+    	   	 }
+    	   } else {
+    	   	 this.statusStr = staObj[res.status]
+    	   	 if (res.status === 70 || res.status === 80 || res.status === 100) {
+    	   	 	this.has_money = 1
+    	   	 } else {
+    	   	 	this.has_money = 0
+    	   	 }
+    	   }
+    }
+    async onShow(){
+    	  // 对于返回的时候取缓存
+      let key = this.id
+      let obj = {}
+      try {
+        obj = await wepy.getStorage({key: key})
+        	if (obj.data) {     	   		
+        	  obj = JSON.parse(obj.data)  
+        	  this.product_list = []  	   	  
+        	  for(var todo in obj) {
+        	    this.product_list.push(obj[todo])
+        	  }
+        	  this.$apply()
+        	}
+      } catch (e) {
+        	  	
+      }
+    }
+    async getDetails () {
+    	  wepy.showLoading({title: '加载中...'})
+        let res;
+        if (+this.status !== 90) {
+          res = await interfaces.getOrderDetail({
+            id: this.id
+          })
+        }
+        if (+this.status === 90) {    	  
+        	  res = await interfaces.orderAfter({
+            id: this.id
+          })
+        	  if (res.data && res.data.support) {
+        	  	this.support = res.data.support
+        	    this.support.image = JSON.parse(this.support.image)
+        	  }
+        	  if (res.data && res.data.order_support) {
+        	  	this.support = res.data.order_support
+        	    this.support.image = JSON.parse(this.order_support.image)
+        	  }
+        }
+        console.log(16, res)
+        this.measure_order = res.data.measure_order
+        let mylist = res.data.product_list
+        // 如果没有这个key的缓存直接取mylist的
+        let key = this.id
+        	let obj = {}
+        	try {
+        	  // 判断是否有这个订单的缓存，没有缓存在catch中拿接口数据赋值给缓存
+        	  obj = await wepy.getStorage({key: key})
+        	} catch (e) {
+        	  // orderItem是一个对象存放这个订单的商品数量	
+        	  let orderItem = {}
+        	  if (this.measure_order.order_item && this.measure_order.order_item.length !== 0){
+        	  	let orderArr = this.measure_order.order_item
+        	  	orderArr.map(d => orderItem[d.product_id] = d.num)
+        	  }
+        	  // 如果接口返回的数据为空，我也不存缓存
+        	  if (mylist && mylist.length) {
+        	    mylist.map(async d => {
+        	      d.min = 1
+        	      if (orderItem[d.id]) {
+        	    	    d.quantity = orderItem[d.id]
+        	      } else {
+        	    	    d.quantity = 1
+        	      }  
+        	      obj[d.id] = d
+            })
+        	    for(var todo in obj) {
+        	  	  this.product_list.push(obj[todo])
+        	    }	
+        	    this.$apply()
+        	    let objStr = JSON.stringify(obj)
+        	    wepy.setStorage({
+              key: key,
+              data: objStr
+            })
+        	  }
+        	}
+        if (this.status == '90') {
+        	  this.measure_order.status = 90
+        }
+        await this.statusObj(this.measure_order)
+        this.measure_order.status = dataConfig.status[this.measure_order.status]
+        this.measure_order.btns = dataConfig.btns[this.measure_order.status]
+        if (this.measure_order.status === 'unpaid' || this.measure_order.status === 'pay') {
+        	   if(this.measure_order.user_params_data != '[]') {
+        	   	  this.measure_order.btns = []
+        	   } else {
+        	   	  this.measure_order.btns = ['uploading']
+        	   }
+        }
+        if (!this.measure_order.combineAddress && this.measure_order.commision_type) {
+            this.measure_order.combineAddress = this.measure_order.receiver_province + this.measure_order.receiver_city + this.measure_order.receiver_district + this.measure_order.receiver_address
+        }
+        if (this.status !== '90' && this.measure_order.commision_type) {
+        	  this.measure_order.measured_at_initial = this.measure_order.measured_at
+          this.measure_order.measured_at = this.$parent.initMeasured(this.measure_order.measured_at)
+        }
+        
+        wepy.hideLoading()
+        this.$apply()
+    }
+    async onLoad (option) {
+       	this.id = option.id
+       	this.measure_order_id = option.measure_order_id
+       	this.status = option.status
+
+        await this.getDetails()
+        this.$apply()
+    }
+
+    showToast(title, timeout) {
+        this.$invoke('./toast', 'showZanToast', { title: title, timeout: timeout })
+    }
+}
+</script>

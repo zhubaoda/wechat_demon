@@ -1,0 +1,592 @@
+<style lang="less">
+.state-text{
+  color: #cb3233;
+  font-size: 13px;
+  line-height: 1.5;
+  padding: 25rpx 30rpx 25rpx 0;
+  padding-top: 0;
+  text-align: right;
+}
+.order-list {
+    position: relative;
+    background-color: #f5f5f5;
+}
+
+.order-list__tab {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    z-index: 1;
+}
+
+.order-list__list {
+    box-sizing: border-box;
+    height: 100vh;
+    padding-top: 45px;
+}
+
+.order-list__container {
+    overflow: hidden;
+    min-height: 65vh;
+    min-height: calc(100vh - 185px);
+}
+.order-item__extra-row{
+    margin: 24rpx auto 0;
+    padding: 0 30rpx; 
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+.order-item {
+    line-height: 1.4;
+    font-size: 14px;
+    -webkit-transition: all 1s ease;
+    transition: all 1s ease;
+    padding: 26rpx 0;
+} 
+.order-item_active {
+	padding-bottom: 0px;
+}
+
+.order-min-height {
+    min-height: 81vh;
+}
+
+.order-item--hide {
+    opacity: 0;
+}
+.state_top_box {
+	padding-left: 5px;
+	span{
+		padding:15rpx 30rpx 15rpx 0;
+
+	}
+	
+}
+.state_top {
+	display: flex;
+	flex-direction: row;
+	justify-content: space-between;
+	align-items:center;
+	line-height: 1.5;
+    padding-left: 25rpx;
+    padding-top: 0;
+    border-bottom: 1px solid rgba(204,204,204, .6);
+    margin-bottom: 8px;
+}
+.zan-panel{
+ margin-top: 20rpx;
+ border: none;
+}
+
+.shop_order {
+	padding-left: 5px;
+	background-color: #fff;
+}
+.shop_top {
+	display: flex;
+	flex-direction: row;
+	justify-content: flex-end;
+	padding: 6px 10px;
+	border-bottom: 1px solid rgba(204,204,204, .6);
+   span{
+   	font-size: 16px;
+   	color:#666;
+   }
+}
+.shop_center {
+    display: flex;
+	flex-direction: row;
+	justify-content: space-between;
+	padding: 8px 8px 8px 0px;
+	box-sizing: border-box;
+	.shop_center__img {
+		width:90px;
+		height:90px;
+		border:1px solid rgba(204,204,204, .6);
+		margin: 0 10px;
+	}
+	.shop_center_right {
+		flex:1;
+		display: flex;
+	    flex-direction: column;
+	    justify-content: space-between;
+	    box-sizing: border-box;
+	    .center_right_top {
+	      display: flex;
+	      flex-direction: column;
+	      .right_top_first {
+	      	font-size:14px;
+	      } 
+	      .right_top_second {
+	      	font-size:12px;
+	      	color:darkgreen;
+	      } 
+	      span{
+	      	width: 160px;
+	      	white-space: nowrap;
+            text-overflow: ellipsis;
+            overflow: hidden;
+	      }
+	    }
+	}
+}
+
+.center_right_bottom {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	justify-content: space-between;
+	.money {
+		color: red;
+	}
+}
+.all_money {
+	padding-left:5px;
+	background-color: #fff;
+	.all_money_box{
+	  display:flex;
+	  flex-direction: row;
+	  align-items: center;
+	  justify-content: space-between;
+	  padding: 12px 10px;
+	  
+	}
+}
+</style>
+<template>
+<view class="container order-list">
+    <!-- tab -->
+    <view class="order-list__tab">
+        <tab :tab.sync="tab" componentId="tab"></tab>
+    </view>
+    <!-- list -->
+    <scroll-view scroll-y="true" class="order-list__list" bindscrolltolower="fetchMore" lower-threshold="50">
+        <view class="order-list__container order-min-height">
+            <!-- list-item -->
+            <view class="order-item zan-panel {{item.user_params_data != '[]'? 'order-item_active' : ''}}" wx:for="{{ currentList }}" wx:for-item="item" wx:key="index">
+                <view @tap="onItemClick({{ item.id }}, {{item}})">
+                	  <view class="state_top_box">
+                    <view class="state_top">
+                       <span>订单编号：{{ item.order_no }}</span>
+                       <span class="state-text" wx:if="{{item.support && item.support.status == '20'}}">售后完成</span>
+                       <span class="state-text" wx:else>{{ item.state_str }}</span>
+                    </view>
+                 </view>
+                    <view class="order-item__hd" wx:if="{{ item.user_params_data == '[]'}}">
+                        <view class="customer-info">
+                            <view> 客户姓名: {{item.name}}</view>
+                            <view> 联系电话: {{item.mobile}} </view>
+                            <view> 上门时间: {{item.measured_at}} </view>
+                            <view> 服务地址: {{item.combineAddress}}</view>
+                        </view>
+                    </view>
+           <view class="shop_order zan-panel" wx:if="{{ item.user_params_data != '[]' || item.support}}">
+        	      <repeat  for="{{ item.order_item }}" item="goodsItem" key="index">
+        	        <view class="shop_center">
+        	   	      <image class="shop_center__img" src="{{ goodsItem.image }}" mode="aspectFit"></image>
+        	   	      <view class="shop_center_right">
+        	   	  	     <view class="center_right_top">
+        	   	  	       <span class="right_top_first">{{ goodsItem.name }}</span>	    
+        	   	  	     </view>
+        	   	  	     <view class="center_right_bottom">
+        	   	  	       <span class="money" wx:if="{{goodsItem.price}}">￥{{goodsItem.price}}元</span>
+        	   	  	       <span >x{{goodsItem.num}}</span>
+        	   	  	     </view>
+        	   	      </view>
+        	       </view>
+        	      </repeat>
+           </view> 
+          
+        
+        	     <view class="all_money" wx:if="{{ (item.paid_at && !item.commision_type) || item.has_money}}">
+           	   <view class="all_money_box">
+           	     <span>佣金提成（待到账）</span>
+           	     <span wx:if="{{ item.status != 40}}">￥{{ item.commision }}</span>
+           	     <span wx:else>等待买家付款</span>
+           	   </view>
+             </view>
+      
+                    <!-- 按钮区域 -->
+                    
+                    <view wx:if="{{ item.btns.length > 0 }}" class="order-item__extra-row">
+                        <view class="order-item__actions">
+                            <block wx:for="{{ item.btns }}" wx:key="index" wx:for-item="btn">
+                                <button wx:if="{{ btn === 'cancel'}}" class="order-item__action m-btn" catchtap="onCancelOrder({{ item.measure_order_id }})">
+                                    取消预约
+                                </button>
+                                <button wx:if="{{ btn === 'modify'}}" class="order-item__action m-btn" catchtap="onModifyClick({{ item }})">
+                                    修改信息
+                                </button>
+                                <!--<button wx:if="{{ btn === 'after'}}" class="order-item__action m-btn" catchtap="contactFirst({{ item }})">
+                                    联系客服
+                                </button>
+                                <button wx:if="{{ btn === 'after'}}" class="order-item__action m-btn" catchtap="contactSecond({{ item }})">
+                                    联系用户
+                                </button>
+                                <button wx:if="{{ btn === 'after'}}" class="order-item__action m-btn" catchtap="afterAll({{ item }})">
+                                    售后完成
+                                </button>-->
+                                <button wx:if="{{ btn === 'tocomplete'}}" class="order-item__action m-btn" catchtap="onToCompleteClick({{ item }})">
+                                    量体完成
+                                </button>
+                                <button wx:if="{{ btn === 'confirm'}}" class="order-item__action m-btn btn-special" catchtap="onConfirmClick({{ item.measure_order_id }})">
+                                    确认接单
+                                </button>
+                                <button wx:if="{{ btn === 'uploading'}}" class="order-item__action m-btn" catchtap="onUploadClick({{ item }})">
+                                    上传数据
+                                </button>
+                            </block>
+                        </view>
+                    </view>
+                </view>
+            </view>
+            <!-- loadmore -->
+            <loadmore :loading.sync="loading" :nodata.sync="nodata" :nomore.sync="nomore"></loadmore>
+        </view>
+    </scroll-view>
+</view>
+</template>
+<script>
+import wepy from 'wepy'
+import interfaces from '@/interfaces/index'
+import dataConfig from './data/config'
+import Tab from '@/components/base/tab'
+import Loadmore from '@/components/base/loadmore'
+
+let status = { topay: 10, toconfirmed: 20, tovisit: 30, tocomplete: 40, cancel: 50, making: 70, after: 90, allover: 100 }
+
+export default class List extends wepy.page {
+    config = {
+        navigationBarTitleText: '预约订单'
+    }
+    components = {
+        tab: Tab,
+        loadmore: Loadmore
+    }
+    data = {
+        tab: dataConfig.tab,
+        list: dataConfig.list,
+        loading: false,
+        nomore: false,
+        nodata: false
+    }
+    computed = {
+        currentList() {
+            return this.list[this.tab.selectedId].list.map((item) => {
+                let status = dataConfig.status[item.status]
+                item.state_str = dataConfig.state_str[status]
+                item.btns = dataConfig.btns[status]
+                
+                if (item.status === 40 || item.status === 60) {
+                	  if (item.user_params_data != '[]') {
+                	  	item.state_str = '定制中'
+                    item.has_money = 1
+                	  	item.btns = []
+                	  } else {
+                	  	item.state_str = '待上传'
+                	  	item.has_money = 0
+                	  	item.btns = ['uploading']
+                	  }
+                } else if (item.status === 70 || item.status === 80 || item.status === 100) {
+                	  item.has_money = 1
+                } else {
+                	  item.has_money = 0
+                }
+              
+                if (!item.measured_year && item.measured_at) {
+                    item.measured_year = item.measured_at.slice(0, 4)
+                }
+                if (!item.combineAddress && item.receiver_province) {
+                    item.combineAddress = item.receiver_province + item.receiver_city + item.receiver_district + item.receiver_address
+                }
+                if (item.measured_at) {
+                  item.measured_at_initial = item.measured_at
+                  item.measured_at = this.$parent.initMeasured(item.measured_at)
+                }
+                return item
+            })
+        }
+    }
+
+    events = {
+        async zanTabChange({ componentId, selectedId }, event) {
+            this.loading = false
+            this.nodata = false
+            this.nomore = false
+            // 重置page
+            this.list[selectedId].page = 1
+            this.tab.selectedId = selectedId
+                this.list[selectedId].list = []
+                this.loading = true
+                await this.getListForType(selectedId)
+                this.loading = false
+            this.$apply()
+        }
+    }
+
+    async onPullDownRefresh () {
+        await this.refresh()
+        wepy.stopPullDownRefresh()
+        wepy.showToast({'title': '刷新成功'})
+    }
+
+    async refresh () {
+        this.initList(this.tab.selectedId)
+        await this.getListForType(this.tab.selectedId)
+    }
+
+    methods = {
+        onItemClick(id, item) {
+            wepy.navigateTo({
+                url: '/pages/order/detail?id=' + id + '&status=' + item.status + '&measure_order_id=' + item.measure_order_id
+            })
+        },
+        async onCancelOrder (id) {
+            let res = await wepy.showModal({content: '确定取消预约？'})
+            if (res.confirm) {
+               let Res = await interfaces.cancelOrder({
+                   id: id
+               })
+               if (!Res.hasError) {
+                   wepy.showToast({title: '取消预约成功'})
+                   await this.refresh()
+               } else if (Res.error) {
+                   this.$parent.showError(Res.error)
+               }
+            }
+        },
+        onModifyClick (item) {
+            this.$parent.globalData.editOrder = item
+            if (item) {
+                wepy.navigateTo({
+                    url: '/pages/order/confirm'
+                })  
+            }
+        },
+        // 联系客服
+        contactFirst (item) {
+        	
+        },
+        // 联系客户
+        contactSecond (item) {
+        	
+        },
+        // 售后服务
+        afterAll (item) {
+        	
+        },
+        // 量体完成
+        async onToCompleteClick (item) {
+        	 
+        	  let res = await interfaces.getOrderDetail({
+            id: item.id
+          })
+        	  let mylist = res.data.product_list 
+        	  // 提交的时候拿缓存
+        	  let key = (item.id).toString()
+        	  let obj = {}
+        	  try {
+        	    obj = await wepy.getStorage({key: key})
+        	   	if (obj.data) {
+        	   	  obj = JSON.parse(obj.data)
+        	   	}
+        	  } catch (e) {
+            
+        	  }
+
+        	  // 如果没有缓存直接拿接口数据
+          if(JSON.stringify(obj) == '{}') {
+           	mylist.map(d => {
+        	      if(!obj[d.id]) {
+        	  	    d.min = 1
+        	        d.quantity = 1
+        	        obj[d.id] = d
+        	      }	   
+            })
+          }
+          let  product_list = []
+          for (var todo in obj) {
+        	      if(obj[todo]) {
+        	  	    product_list.push(obj[todo])
+        	      }  
+          }
+          
+          let show = true  
+
+        	  await product_list.map(d => {
+          let goodsInfo = this.$parent.getSettleGoods(item.id, d.id)       
+          if (goodsInfo) {	
+              let tech_details = goodsInfo.tech_details
+          	  if (!this.$parent.globalData.tech[item.id]) {
+            	    this.$parent.showError('请选择完整工艺细节')
+                  show = false
+                  return
+                }      
+                if(!this.$parent.globalData.tech[item.id][d.id]) {
+                	  show = false
+                	  this.$parent.showError('请选择完整工艺细节')
+                	  return     
+                }
+          		for (let key in tech_details) {  
+                  if (!this.$parent.globalData.tech[item.id][d.id][tech_details[key].id]) {
+                    this.$parent.showError('请选择完整工艺细节')
+                    show = false
+                    return
+                  }
+                }
+          } else {
+          		this.$parent.showError('请选择完整工艺细节')
+          		show = false
+                return
+          	}   
+          })
+        	  // 提交订单数据，数据格式化
+        	  if (show) {          
+            let datas = {}
+            datas.id= item.measure_order_id
+            let product_items = [];
+            await product_list.map(d => {
+          	  let obj = {}
+          	  obj.product_id = d.id
+          	  obj.num = d.quantity
+          	  obj.product_data = {}
+          	  obj.product_data.fabric = d.fabric_id_list
+          	  obj.product_data.tech = [];
+          	  let tech = this.$parent.globalData.tech[item.id][d.id]	
+          	  for(var key in tech) {
+          	    let techObj = {}
+          	    techObj.style = key
+          	    techObj.position = tech[key]
+          	    obj.product_data.tech.push(techObj)
+          	  }
+          	  obj.product_data.embroid = {}
+          	  if(this.$parent.globalData.embroidWord[item.id] && this.$parent.globalData.embroidWord[item.id][d.id]){
+                obj.product_data.embroid.color = this.$parent.globalData.embroidWord[item.id][d.id].color.key;
+                obj.product_data.embroid.font = this.$parent.globalData.embroidWord[item.id][d.id].font.key;
+              }
+          	  product_items.push(obj)
+           })
+           datas.product_items = product_items;
+           // 调用提交接口
+           interfaces.modifyOrder(datas).then((suc) =>{
+             if (suc.success) {
+               wepy.removeStorage({
+			     key: key
+			   })
+          	   if (this.$parent.globalData.goodData[item.id]) {
+          	     delete this.$parent.globalData.goodData[item.id]
+          	   }
+          	   if (this.$parent.globalData.embroidWord[item.id]) {
+          	     delete this.$parent.globalData.embroidWord[item.id]
+          	   }
+          	   this.tab.selectedId = 'tocomplete'
+          	   this.initList(this.tab.selectedId)
+          	   this.getListForType(this.tab.selectedId)
+
+          	  } else {
+          	    this.$parent.showError(suc.error)
+          	  }
+            }).catch(err => { 
+            	
+            })
+          } 
+        },
+        async onConfirmClick (id) {
+            let res = await wepy.showModal({content: '确定接单？'})
+            if (res.confirm) {
+               let Res = await interfaces.takeOrder({
+                   id: id
+               })
+               if (!Res.hasError) {
+                   wepy.showToast({title: '接单成功'})
+                   this.tab.selectedId = 'tovisit'
+                   await this.refresh()
+               } else if (Res.error) {
+                   this.$parent.showError(Res.error)
+               }
+            }
+        },
+        async onUploadClick (item) {
+            wepy.navigateTo({
+                url: '/pages/information/detail?user_id=' + item.user_id + '&order_no=' + item.measure_order_no
+            })
+        }
+    }
+
+    async onShow() {
+    	   // 由于跳转到tabbar用switchtab不能传参，设置一个全局来取这个参数
+       if(this.$parent.globalData.tabtype) {
+    	    	  this.tab.selectedId = this.$parent.globalData.tabtype
+    	    	  this.$parent.globalData.tabtype = null
+    	   }
+    	    this.initList(this.tab.selectedId)
+        wepy.showLoading({title: '加载中...'})
+        await this.getListForType(this.tab.selectedId)
+        wepy.hideLoading()
+    }
+
+    async onLoad (option) {
+    	    let type = option.type || 'all'
+        this.tab.selectedId = type
+        this.$apply()
+    }
+
+    initList (type) {
+        this.list[type].list = []
+        this.list[type].page = 1
+        this.list[type].finished = false
+    }
+
+    async getListForType(type) {
+        let getData = {
+            page: this.list[type].page,
+            status: type !== 'all' ? this.formateType(type) : ''
+        }
+        
+        if (type !== 'after') {
+        	  var res = await interfaces.getOrderList(getData)
+        } else {
+        	  res = await interfaces.afterList(this.list[type].page)
+        	  if (res.data && res.data.rows) {
+        	  	res.data.rows.map(d => {
+        	  		if (!d.support && d.order_support) {
+        	  			d.support = d.order_support
+        	  		}
+        	  	})
+        	  	console.log(17, res.data.rows)
+        	  }
+        }  
+        if (!res.hasError) {
+            if (res.data.rows.length < 10) {
+                this.list[type].finished = true
+            }
+            if (type === 'after') {
+            	  res.data.rows.map(d => {
+            	  	d.status = 90
+            	  })
+            }
+            this.list[type].list = this.list[type].list.concat(res.data.rows)
+            this.list[type].page++
+        }
+        this.nodata = (this.list[type].list.length === 0)
+        this.$apply()
+    }
+
+    formateType(type) {
+        return status[type] || ''
+    }
+    // 加载更多的订单
+    async fetchMore () {
+        if (this.loading) {
+            return
+        }
+        this.loading = true
+        await this.getListForType(this.tab.selectedId)
+        this.loading = false
+        this.$apply()
+    }
+}
+</script>
